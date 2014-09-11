@@ -10,8 +10,29 @@ import (
 	"syscall"
 )
 
+var (
+	clients chan *http.Client
+)
+
+func getClientFromPool() *http.Client {
+	select {
+	case client := <-clients:
+		fmt.Println("Procured client from pool")
+		return client
+	default:
+		fmt.Println("Created new client")
+		return &http.Client{}
+	}
+}
+
+func putClientinPool(client *http.Client) {
+	fmt.Println("Put client into pool")
+	clients <- client
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
-	client := &http.Client{}
+	client := getClientFromPool()
+	defer putClientinPool(client)
 
 	req, err := http.NewRequest(r.Method, "https://api.heroku.com"+r.URL.Path+"?"+r.URL.RawQuery, r.Body)
 	for h, vs := range r.Header {
@@ -50,6 +71,8 @@ func handleSignals(l net.Listener) {
 }
 
 func main() {
+	clients = make(chan *http.Client, 5)
+
 	http.HandleFunc("/", handler)
 
 	//l, err := net.Listen("unix", "/tmp/heroku-agent.sock")
