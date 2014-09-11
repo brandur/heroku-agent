@@ -9,14 +9,14 @@ var (
 	contentHeaders map[string]bool
 )
 
-type CachedRequest struct {
+type CachedResponse struct {
 	content []byte
 	etag    string
 	header  http.Header
 }
 
 type RequestCache struct {
-	cacheMap map[string]map[string]*CachedRequest
+	cacheMap map[string]map[string]*CachedResponse
 }
 
 func init() {
@@ -30,11 +30,11 @@ func init() {
 
 func newRequestCache() *RequestCache {
 	return &RequestCache{
-		cacheMap: make(map[string]map[string]*CachedRequest),
+		cacheMap: make(map[string]map[string]*CachedResponse),
 	}
 }
 
-func (c *RequestCache) getCache(request *http.Request) (*CachedRequest, bool) {
+func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 	if request.Method != "GET" {
 		return nil, false
 	}
@@ -66,11 +66,11 @@ func (c *RequestCache) setCache(request *http.Request, response *http.Response, 
 		return
 	}
 
-	c.cacheMap[auths[0]] = make(map[string]*CachedRequest)
+	c.cacheMap[auths[0]] = make(map[string]*CachedResponse)
 
 	etag := etags[0]
 	url := request.URL.String()
-	cached := &CachedRequest{
+	cached := &CachedResponse{
 		content: content,
 		header:  make(http.Header),
 		etag:    etag,
