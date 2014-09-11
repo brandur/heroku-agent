@@ -11,13 +11,10 @@ import (
 )
 
 var (
-	pool *ClientPool
+	client *http.Client
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	client := pool.checkOut()
-	defer pool.checkIn(client)
-
 	req, err := http.NewRequest(r.Method, "https://api.heroku.com"+r.URL.Path+"?"+r.URL.RawQuery, r.Body)
 	for h, vs := range r.Header {
 		for _, v := range vs {
@@ -29,6 +26,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	defer resp.Body.Close()
 
 	for h, vs := range resp.Header {
 		for _, v := range vs {
@@ -55,7 +53,7 @@ func handleSignals(l net.Listener) {
 }
 
 func main() {
-	pool = newClientPool()
+	client = &http.Client{}
 
 	http.HandleFunc("/", handler)
 
