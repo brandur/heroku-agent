@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -11,11 +11,24 @@ import (
 )
 
 var (
+	cache  *RequestCache
 	client *http.Client
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	cached, isCached := cache.getCache(r)
+
+	// don't try our cache is the client sent their own cache attempt
+	if _, ok := r.Header["If-None-Match"]; ok {
+		isCached = false
+	}
+
 	req, err := http.NewRequest(r.Method, "https://api.heroku.com"+r.URL.Path+"?"+r.URL.RawQuery, r.Body)
+
+	if isCached {
+		req.Header.Set("If-None-Match", cached.etag)
+	}
+
 	for h, vs := range r.Header {
 		for _, v := range vs {
 			req.Header.Set(h, v)
@@ -33,10 +46,32 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set(h, v)
 		}
 	}
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	if isCached && resp.StatusCode == 304 {
+		// remove headers that may be inaccurate on a cached response
+		for k, _ := range contentHeaders {
+			w.Header().Del(k)
+		}
 
-	fmt.Printf("served: %s (%v)\n", r.URL.Path, resp.StatusCode)
+		for h, vs := range cached.header {
+			for _, v := range vs {
+				w.Header().Set(h, v)
+			}
+		}
+
+		w.WriteHeader(200)
+		w.Write(cached.content)
+	} else {
+		w.WriteHeader(resp.StatusCode)
+		//io.Copy(w, resp.Body)
+		bytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			panic(err)
+		}
+		cache.setCache(r, resp, bytes)
+		w.Write(bytes)
+	}
+
+	fmt.Printf("served: %s %s (%v)\n", r.Method, r.URL.Path, resp.StatusCode)
 }
 
 func handleSignals(l net.Listener) {
@@ -53,6 +88,7 @@ func handleSignals(l net.Listener) {
 }
 
 func main() {
+	cache = newRequestCache()
 	client = &http.Client{}
 
 	http.HandleFunc("/", handler)
