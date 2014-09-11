@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -10,8 +11,29 @@ import (
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("serving ...")
-	fmt.Fprintf(w, "hello from heroku-agent: %s", r.URL.Path[1:])
+	client := &http.Client{}
+
+	req, err := http.NewRequest(r.Method, "https://api.heroku.com"+r.URL.Path+"?"+r.URL.RawQuery, r.Body)
+	for h, vs := range r.Header {
+		for _, v := range vs {
+			req.Header.Set(h, v)
+		}
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	for h, vs := range resp.Header {
+		for _, v := range vs {
+			w.Header().Set(h, v)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body)
+
+	fmt.Printf("served: %s (%v)\n", r.URL.Path, resp.StatusCode)
 }
 
 func handleSignals(l net.Listener) {
@@ -30,7 +52,8 @@ func handleSignals(l net.Listener) {
 func main() {
 	http.HandleFunc("/", handler)
 
-	l, err := net.Listen("unix", "/tmp/heroku-agent.sock")
+	//l, err := net.Listen("unix", "/tmp/heroku-agent.sock")
+	l, err := net.Listen("tcp", ":2323")
 	if err != nil {
 		panic(err)
 	}
