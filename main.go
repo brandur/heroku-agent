@@ -31,7 +31,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		isCached = false
 	}
 
-	req, err := http.NewRequest(r.Method, "https://api.heroku.com"+r.URL.Path+"?"+r.URL.RawQuery, r.Body)
+	url := "https://" + r.Host + r.URL.String()
+	req, err := http.NewRequest(r.Method, url, r.Body)
 
 	if isCached {
 		req.Header.Set("If-None-Match", cached.etag)
