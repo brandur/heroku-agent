@@ -62,7 +62,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.Write(cached.content)
 	} else {
 		w.WriteHeader(resp.StatusCode)
-		//io.Copy(w, resp.Body)
 		bytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			panic(err)
