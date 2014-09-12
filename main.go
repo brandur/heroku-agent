@@ -15,6 +15,14 @@ var (
 	client *http.Client
 )
 
+func copyHeaders(source http.Header, destination http.Header) {
+	for h, vs := range source {
+		for _, v := range vs {
+			destination.Set(h, v)
+		}
+	}
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	cached, isCached := cache.getCache(r)
 
@@ -29,11 +37,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		req.Header.Set("If-None-Match", cached.etag)
 	}
 
-	for h, vs := range r.Header {
-		for _, v := range vs {
-			req.Header.Set(h, v)
-		}
-	}
+	copyHeaders(r.Header, req.Header)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -51,12 +55,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		for k, _ := range contentHeaders {
 			w.Header().Del(k)
 		}
-
-		for h, vs := range cached.header {
-			for _, v := range vs {
-				w.Header().Set(h, v)
-			}
-		}
+		copyHeaders(cached.header, w.Header())
 
 		w.WriteHeader(200)
 		w.Write(cached.content)
