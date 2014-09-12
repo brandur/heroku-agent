@@ -74,12 +74,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func handleSignals(l net.Listener) {
 	sigc := make(chan os.Signal, 1)
+	// wait for a SIGINT or SIGKILL
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
 	go func(c chan os.Signal) {
-		// Wait for a SIGINT or SIGKILL:
 		sig := <-c
 		fmt.Printf("Caught signal %s: shutting down.\n", sig)
-		// Stop listening (and unlink the socket if unix type):
+		// stop listening (and unlink the socket if unix type)
 		l.Close()
 		os.Exit(0)
 	}(sigc)
