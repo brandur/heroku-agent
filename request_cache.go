@@ -44,14 +44,15 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 		return nil, false
 	}
 
+	auth := auths[0]
 	url := request.URL.String()
-	cached, ok := c.cacheMap[auths[0]][url]
+	cached, ok := c.cacheMap[auth][url]
 	if !ok {
-		fmt.Printf("cache miss: %s %s\n", auths[0][0:10], url)
+		fmt.Printf("cache miss: %s %s\n", auth[0:10], url)
 		return nil, false
 	}
 
-	fmt.Printf("cache hit: %s %s (etag: %s)\n", auths[0][0:10], url, cached.etag)
+	fmt.Printf("cache hit: %s %s (etag: %s)\n", auth[0:10], url, cached.etag)
 	return cached, true
 }
 
@@ -66,7 +67,10 @@ func (c *RequestCache) setCache(request *http.Request, response *http.Response, 
 		return
 	}
 
-	c.cacheMap[auths[0]] = make(map[string]*CachedResponse)
+	auth := auths[0]
+	if _, ok = c.cacheMap[auth]; !ok {
+		c.cacheMap[auths[0]] = make(map[string]*CachedResponse)
+	}
 
 	etag := etags[0]
 	url := request.URL.String()
@@ -85,9 +89,9 @@ func (c *RequestCache) setCache(request *http.Request, response *http.Response, 
 		}
 	}
 
-	c.cacheMap[auths[0]][url] = cached
+	c.cacheMap[auth][url] = cached
 
-	fmt.Printf("cache store: %s %s (etag: %s)\n", auths[0][0:10], url, etag)
+	fmt.Printf("cache store: %s %s (etag: %s)\n", auth[0:10], url, etag)
 
 	// @todo: check to make sure cache size doesn't become unmanagable
 }
