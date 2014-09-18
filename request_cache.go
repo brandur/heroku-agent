@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 )
 
 var (
 	cache          *RequestCache
-	client         *http.Client
 	contentHeaders map[string]bool
 )
 
@@ -31,59 +30,37 @@ func init() {
 	}
 }
 
-func CacheHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func CacheHandler(w *httptest.ResponseRecorder, r *http.Request, next NextHandlerFunc) {
 	cached, isCached := cache.getCache(r)
 
-	// don't try our cache is the client sent their own cache attempt
+	// don't try our cache if the client sent their own cache attempt
 	if _, ok := r.Header["If-None-Match"]; ok {
 		isCached = false
 	}
 
-	url := "https://" + r.Host + r.URL.String()
-	req, err := http.NewRequest(r.Method, url, r.Body)
-
 	if isCached {
-		req.Header.Set("If-None-Match", cached.etag)
+		r.Header.Set("If-None-Match", cached.etag)
 	}
 
-	copyHeaders(r.Header, req.Header)
+	next(w, r)
 
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
+	if isCached && w.Code == 304 {
+		newWriter := httptest.NewRecorder()
 
-	for h, vs := range resp.Header {
-		for _, v := range vs {
-			w.Header().Set(h, v)
-		}
-	}
-	if isCached && resp.StatusCode == 304 {
 		// remove headers that may be inaccurate on a cached response
 		for k, _ := range contentHeaders {
 			w.Header().Del(k)
 		}
-		copyHeaders(cached.header, w.Header())
+		copyHeaders(w.Header(), newWriter.Header())
+		copyHeaders(cached.header, newWriter.Header())
 
-		w.WriteHeader(200)
-		w.Write(cached.content)
+		newWriter.WriteHeader(200)
+		newWriter.Write(cached.content)
+
+		// move to the new writer reference and discard the old one
+		w = newWriter
 	} else {
-		w.WriteHeader(resp.StatusCode)
-		bytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			panic(err)
-		}
-		cache.setCache(r, resp, bytes)
-		w.Write(bytes)
-	}
-}
-
-func copyHeaders(source http.Header, destination http.Header) {
-	for h, vs := range source {
-		for _, v := range vs {
-			destination.Set(h, v)
-		}
+		cache.setCache(r, w.Header(), w.Body.Bytes())
 	}
 }
 
@@ -115,13 +92,13 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 	return cached, true
 }
 
-func (c *RequestCache) setCache(request *http.Request, response *http.Response, content []byte) {
+func (c *RequestCache) setCache(request *http.Request, headers http.Header, content []byte) {
 	auths, ok := request.Header["Authorization"]
 	if !ok {
 		return
 	}
 
-	etags, ok := response.Header["Etag"]
+	etags, ok := headers["Etag"]
 	if !ok {
 		return
 	}
@@ -140,7 +117,7 @@ func (c *RequestCache) setCache(request *http.Request, response *http.Response, 
 	}
 
 	// store Content-* headers for an accurate cached response
-	for h, vs := range response.Header {
+	for h, vs := range headers {
 		for _, v := range vs {
 			if _, ok := contentHeaders[h]; ok {
 				cached.header.Set(h, v)

@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 )
 
-func LogHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func LogHandler(w *httptest.ResponseRecorder, r *http.Request, next NextHandlerFunc) {
 	fmt.Printf("Request: %s %s [start]\n", r.Method, r.URL.String())
 
 	next(w, r)

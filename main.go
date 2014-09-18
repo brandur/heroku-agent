@@ -5,27 +5,36 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-type HandlerFunc func(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc)
+type HandlerFunc func(w *httptest.ResponseRecorder, r *http.Request, next NextHandlerFunc)
+
+type NextHandlerFunc func(w *httptest.ResponseRecorder, r *http.Request)
 
 func buildHandlerChain(handlers []HandlerFunc) func(w http.ResponseWriter, r *http.Request) {
-	chain := func(_ http.ResponseWriter, _ *http.Request) {
+	chain := func(_ *httptest.ResponseRecorder, _ *http.Request) {
 	}
 
 	// move through handlers in reverse and compose them on top of each other
 	for i := len(handlers) - 1; i >= 0; i-- {
 		handler := handlers[i]
 		next := chain
-		chain = func(w http.ResponseWriter, r *http.Request) {
+		chain = func(w *httptest.ResponseRecorder, r *http.Request) {
 			handler(w, r, next)
 		}
 	}
 
-	return chain
+	return func(w http.ResponseWriter, r *http.Request) {
+		recorder := httptest.NewRecorder()
+		chain(recorder, r)
+		copyHeaders(recorder.Header(), w.Header())
+		w.WriteHeader(recorder.Code)
+		w.Write(recorder.Body.Bytes())
+	}
 }
 
 func handleSignals(l net.Listener) {
