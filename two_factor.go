@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -37,7 +40,11 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseR
 		} else if secondFactor.waiting && sentToken != "" {
 			// instead of just burning this token, request a specialized one
 			// that can skip two factor checks, and which we'll hold onto
-			token, expiresAt := getSkipTwoFactorToken(auth, sentToken)
+			token, expiresAt, err := getSkipTwoFactorToken(r.URL.String(), auth, sentToken)
+			if err != nil {
+				panic(err)
+			}
+
 			secondFactor.expiresAt = expiresAt
 			secondFactor.token = token
 			secondFactor.waiting = false
@@ -57,6 +64,59 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseR
 	return w
 }
 
-func getSkipTwoFactorToken(auth string, sentToken string) (string, time.Time) {
-	return "", time.Now()
+type CreateAuthorizationRequest struct {
+	Description   string `json:"description"`
+	ExpiresIn     int    `json:"expires_in"`
+	SkipTwoFactor bool   `json:"skip_two_factor"`
+}
+
+type CreateAuthorizationResponse struct {
+	AccessToken struct {
+		ExpiresIn int    `json:"expires_in"`
+		Token     string `json:"token"`
+	} `json:"access_token"`
+}
+
+func getSkipTwoFactorToken(url string, auth string, sentToken string) (string, time.Time, error) {
+	fmt.Printf("url = %s\n", url)
+
+	requestData := &CreateAuthorizationRequest{
+		Description:   "Skip 2FA session from heroku-agent",
+		ExpiresIn:     60 * 30,
+		SkipTwoFactor: true,
+	}
+	encoded, err := json.Marshal(requestData)
+	if err != nil {
+		return "", time.Now(), err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(encoded))
+	if err != nil {
+		return "", time.Now(), err
+	}
+
+	req.Header.Set("Accept", "application/vnd.heroku+json; version=3")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Heroku-Sudo", "true")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", time.Now(), err
+	}
+	if resp.StatusCode != 201 {
+		return "", time.Now(), fmt.Errorf("Unexpected response code: %v", resp.StatusCode)
+	}
+
+	encoded, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", time.Now(), err
+	}
+
+	responseData := &CreateAuthorizationResponse{}
+	err = json.Unmarshal(encoded, responseData)
+	if err != nil {
+		return "", time.Now(), err
+	}
+
+	return responseData.AccessToken.Token, time.Now().Add(time.Duration(responseData.AccessToken.ExpiresIn) * time.Second), nil
 }
