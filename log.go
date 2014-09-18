@@ -6,23 +6,18 @@ import (
 	"net/http/httptest"
 )
 
-func LogHandler(w *httptest.ResponseRecorder, r *http.Request, next NextHandlerFunc) {
+func LogHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
 	fmt.Printf("Request: %s %s [start]\n", r.Method, r.URL.String())
 
-	next(w, r)
-
-	// A better way to get status would be good because the presence of the
-	// `Status` header isn't reliable
-	status := w.Header().Get("Status")
-	if status != "" {
-		status = " [" + status + "]"
-	}
+	w := next(r)
 
 	requestId := w.Header().Get("Request-Id")
 	if requestId != "" {
 		requestId = " [request_id=" + requestId + "]"
 	}
 
-	fmt.Printf("Request: %s %s [finish]%s%s\n",
-		r.Method, r.URL.String(), status, requestId)
+	fmt.Printf("Request: %s %s [finish] [status=%v]%s\n",
+		r.Method, r.URL.String(), w.Code, requestId)
+
+	return w
 }
