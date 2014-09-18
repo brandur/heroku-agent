@@ -77,8 +77,6 @@ func CacheHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 		cache.setCache(r, resp, bytes)
 		w.Write(bytes)
 	}
-
-	fmt.Printf("served: %s %s (%v)\n", r.Method, r.URL.Path, resp.StatusCode)
 }
 
 func copyHeaders(source http.Header, destination http.Header) {

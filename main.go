@@ -13,18 +13,19 @@ import (
 type HandlerFunc func(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 
 func buildHandlerChain(handlers []HandlerFunc) func(w http.ResponseWriter, r *http.Request) {
-	next := func(_ http.ResponseWriter, _ *http.Request) {
+	chain := func(_ http.ResponseWriter, _ *http.Request) {
 	}
 
 	// move through handlers in reverse and compose them on top of each other
 	for i := len(handlers) - 1; i >= 0; i-- {
 		handler := handlers[i]
-		next = func(w http.ResponseWriter, r *http.Request) {
+		next := chain
+		chain = func(w http.ResponseWriter, r *http.Request) {
 			handler(w, r, next)
 		}
 	}
 
-	return next
+	return chain
 }
 
 func handleSignals(l net.Listener) {
@@ -45,6 +46,7 @@ func main() {
 	client = &http.Client{}
 
 	handlers := []HandlerFunc{
+		LogHandler,
 		CacheHandler,
 	}
 
@@ -57,10 +59,12 @@ func main() {
 
 	// We rely on file access to guarantee security so make sure that the
 	// socket is opened in the user's home directory.
-	l, err := net.Listen("unix", home+"/.heroku-agent.sock")
+	path := home + "/.heroku-agent.sock"
+	l, err := net.Listen("unix", path)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Serving on: %s\n", path)
 
 	// handle common process-killing signals so we can gracefully shut down
 	handleSignals(l)
