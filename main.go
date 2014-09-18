@@ -26,13 +26,6 @@ func handleSignals(l net.Listener) {
 func main() {
 	client = &http.Client{}
 
-	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
-		LogHandler,
-		TwoFactorHandler,
-		CacheHandler,
-		ProxyHandler,
-	}))
-
 	home, err := homedir.Dir()
 	if err != nil {
 		panic(err)
@@ -57,6 +50,13 @@ func main() {
 
 	// handle common process-killing signals so we can gracefully shut down
 	handleSignals(l)
+
+	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
+		LogHandler,
+		TwoFactorHandler,
+		CacheHandler,
+		ProxyHandler,
+	}))
 
 	server := &http.Server{}
 	err = server.Serve(l)
