@@ -92,8 +92,7 @@ func main() {
 
 	http.HandleFunc("/", handler)
 
-	//l, err := net.Listen("unix", "/tmp/heroku-agent.sock")
-	l, err := net.Listen("tcp", ":2323")
+	l, err := net.Listen("unix", "/tmp/heroku-agent.sock")
 	if err != nil {
 		panic(err)
 	}
