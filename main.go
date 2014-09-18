@@ -76,7 +76,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func handleSignals(l net.Listener) {
 	sigc := make(chan os.Signal, 1)
-	// wait for a SIGINT or SIGKILL
+	// wait for SIGINT, SIGKILL, or SIGTERM
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
 	go func(c chan os.Signal) {
 		sig := <-c
