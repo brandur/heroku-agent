@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	homedir "github.com/mitchellh/go-homedir"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -11,67 +10,21 @@ import (
 	"syscall"
 )
 
-var (
-	cache  *RequestCache
-	client *http.Client
-)
+type HandlerFunc func(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 
-func copyHeaders(source http.Header, destination http.Header) {
-	for h, vs := range source {
-		for _, v := range vs {
-			destination.Set(h, v)
+func buildHandlerChain(handlers []HandlerFunc) func(w http.ResponseWriter, r *http.Request) {
+	next := func(_ http.ResponseWriter, _ *http.Request) {
+	}
+
+	// move through handlers in reverse and compose them on top of each other
+	for i := len(handlers) - 1; i >= 0; i-- {
+		handler := handlers[i]
+		next = func(w http.ResponseWriter, r *http.Request) {
+			handler(w, r, next)
 		}
 	}
-}
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	cached, isCached := cache.getCache(r)
-
-	// don't try our cache is the client sent their own cache attempt
-	if _, ok := r.Header["If-None-Match"]; ok {
-		isCached = false
-	}
-
-	url := "https://" + r.Host + r.URL.String()
-	req, err := http.NewRequest(r.Method, url, r.Body)
-
-	if isCached {
-		req.Header.Set("If-None-Match", cached.etag)
-	}
-
-	copyHeaders(r.Header, req.Header)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	for h, vs := range resp.Header {
-		for _, v := range vs {
-			w.Header().Set(h, v)
-		}
-	}
-	if isCached && resp.StatusCode == 304 {
-		// remove headers that may be inaccurate on a cached response
-		for k, _ := range contentHeaders {
-			w.Header().Del(k)
-		}
-		copyHeaders(cached.header, w.Header())
-
-		w.WriteHeader(200)
-		w.Write(cached.content)
-	} else {
-		w.WriteHeader(resp.StatusCode)
-		bytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			panic(err)
-		}
-		cache.setCache(r, resp, bytes)
-		w.Write(bytes)
-	}
-
-	fmt.Printf("served: %s %s (%v)\n", r.Method, r.URL.Path, resp.StatusCode)
+	return next
 }
 
 func handleSignals(l net.Listener) {
@@ -91,7 +44,11 @@ func main() {
 	cache = newRequestCache()
 	client = &http.Client{}
 
-	http.HandleFunc("/", handler)
+	handlers := []HandlerFunc{
+		CacheHandler,
+	}
+
+	http.HandleFunc("/", buildHandlerChain(handlers))
 
 	home, err := homedir.Dir()
 	if err != nil {

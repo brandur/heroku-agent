@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
 var (
+	cache          *RequestCache
+	client         *http.Client
 	contentHeaders map[string]bool
 )
 
@@ -25,6 +28,64 @@ func init() {
 		"Content-Length":   true,
 		"Content-Type":     true,
 		"Status":           true,
+	}
+}
+
+func CacheHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	cached, isCached := cache.getCache(r)
+
+	// don't try our cache is the client sent their own cache attempt
+	if _, ok := r.Header["If-None-Match"]; ok {
+		isCached = false
+	}
+
+	url := "https://" + r.Host + r.URL.String()
+	req, err := http.NewRequest(r.Method, url, r.Body)
+
+	if isCached {
+		req.Header.Set("If-None-Match", cached.etag)
+	}
+
+	copyHeaders(r.Header, req.Header)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	for h, vs := range resp.Header {
+		for _, v := range vs {
+			w.Header().Set(h, v)
+		}
+	}
+	if isCached && resp.StatusCode == 304 {
+		// remove headers that may be inaccurate on a cached response
+		for k, _ := range contentHeaders {
+			w.Header().Del(k)
+		}
+		copyHeaders(cached.header, w.Header())
+
+		w.WriteHeader(200)
+		w.Write(cached.content)
+	} else {
+		w.WriteHeader(resp.StatusCode)
+		bytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			panic(err)
+		}
+		cache.setCache(r, resp, bytes)
+		w.Write(bytes)
+	}
+
+	fmt.Printf("served: %s %s (%v)\n", r.Method, r.URL.Path, resp.StatusCode)
+}
+
+func copyHeaders(source http.Header, destination http.Header) {
+	for h, vs := range source {
+		for _, v := range vs {
+			destination.Set(h, v)
+		}
 	}
 }
 
