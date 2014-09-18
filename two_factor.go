@@ -13,7 +13,6 @@ import (
 type SecondFactor struct {
 	expiresAt time.Time
 	token     string
-	waiting   bool
 }
 
 var (
@@ -26,40 +25,35 @@ func init() {
 
 func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
 	auth := r.Header.Get("Authorization")
+	secondFactor, ok := secondFactors[auth]
+	if !ok {
+		secondFactor = &SecondFactor{}
+		secondFactors[auth] = secondFactor
+	}
 
-	if secondFactor, ok := secondFactors[auth]; ok {
-		sentToken := r.Header.Get("Heroku-Two-Factor-Code")
-		if secondFactor.token != "" {
-			if secondFactor.expiresAt.After(time.Now()) {
-				r.Header.Set("Authorization", "Bearer "+secondFactor.token)
-				fmt.Printf("2FA token held; replaced authorization\n")
-			} else {
-				delete(secondFactors, auth)
-				fmt.Printf("2FA token expired; removed from cache\n")
-			}
-		} else if secondFactor.waiting && sentToken != "" {
-			// instead of just burning this token, request a specialized one
-			// that can skip two factor checks, and which we'll hold onto
-			token, expiresAt, err := getSkipTwoFactorToken(r.URL.String(), auth, sentToken)
-			if err != nil {
-				panic(err)
-			}
-
-			secondFactor.expiresAt = expiresAt
-			secondFactor.token = token
-			secondFactor.waiting = false
-			fmt.Printf("2FA token acquired; set in cache\n")
+	sentToken := r.Header.Get("Heroku-Two-Factor-Code")
+	if secondFactor.token != "" {
+		if secondFactor.expiresAt.After(time.Now()) {
+			r.Header.Set("Authorization", "Bearer "+secondFactor.token)
+			fmt.Printf("2FA token held; replaced authorization\n")
+		} else {
+			delete(secondFactors, auth)
+			fmt.Printf("2FA token expired; removed from cache\n")
 		}
+	} else if sentToken != "" {
+		// instead of just burning this token, request a specialized one
+		// that can skip two factor checks, and which we'll hold onto
+		token, expiresAt, err := getSkipTwoFactorToken(r)
+		if err != nil {
+			panic(err)
+		}
+
+		secondFactor.expiresAt = expiresAt
+		secondFactor.token = token
+		fmt.Printf("2FA token acquired; set in cache\n")
 	}
 
 	w := next(r)
-
-	if w.Header().Get("Heroku-Two-Factor-Required") != "" {
-		secondFactors[auth] = &SecondFactor{
-			waiting: true,
-		}
-		fmt.Printf("2FA required; waiting on code from client\n")
-	}
 
 	return w
 }
@@ -77,8 +71,10 @@ type CreateAuthorizationResponse struct {
 	} `json:"access_token"`
 }
 
-func getSkipTwoFactorToken(url string, auth string, sentToken string) (string, time.Time, error) {
-	fmt.Printf("url = %s\n", url)
+func getSkipTwoFactorToken(r *http.Request) (string, time.Time, error) {
+	authUrl := "https://" + r.Host + "/oauth/authorizations"
+	auth := r.Header.Get("Authorization")
+	sentToken := r.Header.Get("Heroku-Two-Factor-Code")
 
 	requestData := &CreateAuthorizationRequest{
 		Description:   "Skip 2FA session from heroku-agent",
@@ -90,13 +86,15 @@ func getSkipTwoFactorToken(url string, auth string, sentToken string) (string, t
 		return "", time.Now(), err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(encoded))
+	req, err := http.NewRequest("POST", authUrl, bytes.NewBuffer(encoded))
 	if err != nil {
 		return "", time.Now(), err
 	}
 
 	req.Header.Set("Accept", "application/vnd.heroku+json; version=3")
+	req.Header.Set("Authorization", auth)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Heroku-Two-Factor-Code", sentToken)
 	req.Header.Set("X-Heroku-Sudo", "true")
 
 	resp, err := client.Do(req)
