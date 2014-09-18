@@ -29,6 +29,7 @@ func main() {
 
 	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
 		LogHandler,
+		TwoFactorHandler,
 		CacheHandler,
 		ProxyHandler,
 	}))
