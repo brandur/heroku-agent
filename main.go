@@ -24,7 +24,6 @@ func handleSignals(l net.Listener) {
 }
 
 func main() {
-	cache = newRequestCache()
 	client = &http.Client{}
 
 	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{

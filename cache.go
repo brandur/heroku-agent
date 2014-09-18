@@ -22,6 +22,7 @@ type RequestCache struct {
 }
 
 func init() {
+	cache = newRequestCache()
 	contentHeaders = map[string]bool{
 		"Content-Encoding": true,
 		"Content-Length":   true,
