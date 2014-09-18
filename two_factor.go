@@ -23,32 +23,51 @@ func init() {
 	secondFactors = make(map[string]*SecondFactor)
 }
 
-func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
+func tryStoredSecondFactor(r *http.Request) bool {
 	auth := r.Header.Get("Authorization")
 	secondFactor, ok := secondFactors[auth]
 
-	sentToken := r.Header.Get("Heroku-Two-Factor-Code")
 	if ok {
 		if secondFactor.expiresAt.After(time.Now()) {
 			r.Header.Set("Authorization", "Bearer "+secondFactor.token)
-			fmt.Printf("2FA token held; replaced authorization\n")
+			fmt.Printf("2FA token held; replaced authorization (valid for %v)\n",
+				secondFactor.expiresAt.Sub(time.Now()))
+			return true
 		} else {
 			delete(secondFactors, auth)
 			fmt.Printf("2FA token expired; removed from cache\n")
 		}
-	} else if sentToken != "" {
-		// instead of just burning this token, request a specialized one
-		// that can skip two factor checks, and which we'll hold onto
-		secondFactor, err := getSkipTwoFactorToken(r)
-		if err != nil {
-			panic(err)
+	} else {
+		fmt.Printf("2FA token not held\n")
+	}
+
+	return false
+}
+
+func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
+	// replace our sent authorization if we're holding a more privileged token
+	// already
+	if !tryStoredSecondFactor(r) {
+		sentToken := r.Header.Get("Heroku-Two-Factor-Code")
+		if sentToken != "" {
+			// instead of just burning this token, request a specialized one
+			// that can skip two factor checks, and which we'll hold onto
+			var err error
+			secondFactor, err := getSkipTwoFactorToken(r)
+			if err != nil {
+				panic(err)
+			}
+
+			auth := r.Header.Get("Authorization")
+			secondFactors[auth] = secondFactor
+			fmt.Printf("2FA token acquired; set in cache\n")
+
+			// give the newly stored second factor another try
+			tryStoredSecondFactor(r)
 		}
-		secondFactors[auth] = secondFactor
-		fmt.Printf("2FA token acquired; set in cache\n")
 	}
 
 	w := next(r)
-
 	return w
 }
 
