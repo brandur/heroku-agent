@@ -5,37 +5,10 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"net"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/signal"
 	"syscall"
 )
-
-type HandlerFunc func(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder
-
-type NextHandlerFunc func(r *http.Request) *httptest.ResponseRecorder
-
-func buildHandlerChain(handlers []HandlerFunc) func(w http.ResponseWriter, r *http.Request) {
-	chain := func(_ *http.Request) *httptest.ResponseRecorder {
-		return httptest.NewRecorder()
-	}
-
-	// move through handlers in reverse and compose them on top of each other
-	for i := len(handlers) - 1; i >= 0; i-- {
-		handler := handlers[i]
-		next := chain
-		chain = func(r *http.Request) *httptest.ResponseRecorder {
-			return handler(r, next)
-		}
-	}
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		recorder := chain(r)
-		copyHeaders(recorder.Header(), w.Header())
-		w.WriteHeader(recorder.Code)
-		w.Write(recorder.Body.Bytes())
-	}
-}
 
 func handleSignals(l net.Listener) {
 	sigc := make(chan os.Signal, 1)
@@ -54,13 +27,11 @@ func main() {
 	cache = newRequestCache()
 	client = &http.Client{}
 
-	handlers := []HandlerFunc{
+	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
 		LogHandler,
 		CacheHandler,
 		ProxyHandler,
-	}
-
-	http.HandleFunc("/", buildHandlerChain(handlers))
+	}))
 
 	home, err := homedir.Dir()
 	if err != nil {
