@@ -90,7 +90,7 @@ func getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
 	sentToken := r.Header.Get("Heroku-Two-Factor-Code")
 
 	requestData := &CreateAuthorizationRequest{
-		Description:   "Skip 2FA session from heroku-agent",
+		Description:   "heroku-agent",
 		ExpiresIn:     60 * 30,
 		SkipTwoFactor: true,
 	}
