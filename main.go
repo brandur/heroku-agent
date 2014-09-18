@@ -46,6 +46,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Make sure that only the current user can gain access to this socket as
+	// it will hold secrets.
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Printf("Serving on: %s\n", path)
 
 	// handle common process-killing signals so we can gracefully shut down
