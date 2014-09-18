@@ -26,10 +26,6 @@ func init() {
 func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
 	auth := r.Header.Get("Authorization")
 	secondFactor, ok := secondFactors[auth]
-	if !ok {
-		secondFactor = &SecondFactor{}
-		secondFactors[auth] = secondFactor
-	}
 
 	sentToken := r.Header.Get("Heroku-Two-Factor-Code")
 	if ok {
