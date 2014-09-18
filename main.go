@@ -23,30 +23,34 @@ func handleSignals(l net.Listener) {
 	}(sigc)
 }
 
-func main() {
+func init() {
 	client = &http.Client{}
+}
 
-	home, err := homedir.Dir()
+func main() {
+	socketPath := os.Getenv("HEROKU_AGENT_SOCK")
+	if socketPath == "" {
+		socketPath = "~/.heroku-agent.sock"
+	}
+
+	socketPath, err := homedir.Expand(socketPath)
 	if err != nil {
 		panic(err)
 	}
 
-	// We rely on file access to guarantee security so make sure that the
-	// socket is opened in the user's home directory.
-	path := home + "/.heroku-agent.sock"
-	l, err := net.Listen("unix", path)
+	l, err := net.Listen("unix", socketPath)
 	if err != nil {
 		panic(err)
 	}
 
 	// Make sure that only the current user can gain access to this socket as
 	// it will hold secrets.
-	err = os.Chmod(path, 0600)
+	err = os.Chmod(socketPath, 0600)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Serving on: %s\n", path)
+	fmt.Printf("Serving on: %s\n", socketPath)
 
 	// handle common process-killing signals so we can gracefully shut down
 	handleSignals(l)
