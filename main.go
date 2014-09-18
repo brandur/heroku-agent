@@ -48,6 +48,7 @@ func main() {
 	handlers := []HandlerFunc{
 		LogHandler,
 		CacheHandler,
+		ProxyHandler,
 	}
 
 	http.HandleFunc("/", buildHandlerChain(handlers))
