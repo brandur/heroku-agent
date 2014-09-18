@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	homedir "github.com/mitchellh/go-homedir"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -92,7 +93,14 @@ func main() {
 
 	http.HandleFunc("/", handler)
 
-	l, err := net.Listen("unix", "/tmp/heroku-agent.sock")
+	home, err := homedir.Dir()
+	if err != nil {
+		panic(err)
+	}
+
+	// We rely on file access to guarantee security so make sure that the
+	// socket is opened in the user's home directory.
+	l, err := net.Listen("unix", home+"/.heroku-agent.sock")
 	if err != nil {
 		panic(err)
 	}
