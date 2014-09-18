@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 )
@@ -31,11 +31,10 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 	}
 
 	w.WriteHeader(resp.StatusCode)
-	bytes, err := ioutil.ReadAll(resp.Body)
+	_, err = io.Copy(w, resp.Body)
 	if err != nil {
 		panic(err)
 	}
-	w.Write(bytes)
 
 	return w
 }
