@@ -87,11 +87,11 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 	url := request.URL.String()
 	cached, ok := c.cacheMap[auth][url]
 	if !ok {
-		fmt.Printf("Cache miss: %s %s\n", auth[0:10], url)
+		fmt.Printf("Cache miss: %s... %s\n", auth[0:10], url)
 		return nil, false
 	}
 
-	fmt.Printf("Cache hit: %s %s [etag=%s]\n", auth[0:10], url, cached.etag)
+	fmt.Printf("Cache hit: %s... %s [etag=%s]\n", auth[0:10], url, cached.etag)
 	return cached, true
 }
 
@@ -130,7 +130,7 @@ func (c *RequestCache) setCache(request *http.Request, headers http.Header, cont
 
 	c.cacheMap[auth][url] = cached
 
-	fmt.Printf("Cache store: %s %s [etag=%s]\n", auth[0:10], url, etag)
+	fmt.Printf("Cache store: %s... %s [etag=%s]\n", auth[0:10], url, etag)
 
 	// @todo: check to make sure cache size doesn't become unmanagable
 }
