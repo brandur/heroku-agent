@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	homedir "github.com/mitchellh/go-homedir"
+	flag "github.com/ogier/pflag"
+	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -34,10 +37,19 @@ func fail(err error) {
 
 func init() {
 	client = &http.Client{}
-	logger = log.New(os.Stdout, "[heroku-agent] ", log.Ltime)
 }
 
-func main() {
+func initLogger(verbose bool) *log.Logger {
+	var writer io.Writer
+	if verbose {
+		writer = os.Stdout
+	} else {
+		writer = ioutil.Discard
+	}
+	return log.New(writer, "[heroku-agent] ", log.Ltime)
+}
+
+func initListener() net.Listener {
 	socketPath := os.Getenv("HEROKU_AGENT_SOCK")
 	if socketPath == "" {
 		socketPath = "~/.heroku-agent.sock"
@@ -67,9 +79,18 @@ func main() {
 	}
 
 	logger.Printf("Serving on: %s\n", socketPath)
+	return l
+}
+
+func main() {
+	verbose := flag.BoolP("verbose", "v", false, "Verbose mode")
+	flag.Parse()
+
+	logger = initLogger(*verbose)
+	listener := initListener()
 
 	// handle common process-killing signals so we can gracefully shut down
-	go handleSignals(l)
+	go handleSignals(listener)
 
 	// periodically reap the cache so that we don't bloat out of control
 	go ReapCache()
@@ -82,7 +103,7 @@ func main() {
 	}))
 
 	server := &http.Server{}
-	err = server.Serve(l)
+	err := server.Serve(listener)
 	if err != nil {
 		fail(err)
 	}
