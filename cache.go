@@ -112,7 +112,7 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 
 func (c *RequestCache) reap() {
 	now := time.Now()
-	expiredKeys := make([]string, 3)
+	expiredKeys := make([]string, 0)
 
 	for k, v := range c.cacheMap {
 		if now.After(v.expiresAt) {
