@@ -77,7 +77,7 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 func ReapCache() {
 	for {
 		select {
-		case <-time.After(1 * time.Minute):
+		case <-time.After(20 * time.Minute):
 			cache.reap()
 		}
 	}
