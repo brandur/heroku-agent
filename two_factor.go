@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"time"
 )
 
@@ -16,60 +17,8 @@ type SecondFactor struct {
 }
 
 var (
-	secondFactors map[string]*SecondFactor
+	store *SecondFactorStore
 )
-
-func init() {
-	secondFactors = make(map[string]*SecondFactor)
-}
-
-func tryStoredSecondFactor(r *http.Request) bool {
-	auth := r.Header.Get("Authorization")
-	secondFactor, ok := secondFactors[auth]
-
-	if ok {
-		if secondFactor.expiresAt.After(time.Now()) {
-			r.Header.Set("Authorization", "Bearer "+secondFactor.token)
-			logger.Printf("2FA token held; replaced authorization (valid for %v)\n",
-				secondFactor.expiresAt.Sub(time.Now()))
-			return true
-		} else {
-			delete(secondFactors, auth)
-			logger.Printf("2FA token expired; removed from cache\n")
-		}
-	} else {
-		logger.Printf("2FA token not held\n")
-	}
-
-	return false
-}
-
-func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
-	// replace our sent authorization if we're holding a more privileged token
-	// already
-	if !tryStoredSecondFactor(r) {
-		sentToken := r.Header.Get("Heroku-Two-Factor-Code")
-		if sentToken != "" {
-			// instead of just burning this token, request a specialized one
-			// that can skip two factor checks, and which we'll hold onto
-			var err error
-			secondFactor, err := getSkipTwoFactorToken(r)
-			if err != nil {
-				logger.Panic(err)
-			}
-
-			auth := r.Header.Get("Authorization")
-			secondFactors[auth] = secondFactor
-			logger.Printf("2FA token acquired; set in cache\n")
-
-			// give the newly stored second factor another try
-			tryStoredSecondFactor(r)
-		}
-	}
-
-	w := next(r)
-	return w
-}
 
 type CreateAuthorizationRequest struct {
 	Description   string `json:"description"`
@@ -84,7 +33,42 @@ type CreateAuthorizationResponse struct {
 	} `json:"access_token"`
 }
 
-func getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
+type SecondFactorStore struct {
+	secondFactorMap map[string]*SecondFactor
+	mutex           *sync.Mutex
+}
+
+func init() {
+	store = &SecondFactorStore{
+		secondFactorMap: make(map[string]*SecondFactor),
+		mutex:           &sync.Mutex{},
+	}
+}
+
+func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
+	// replace our sent authorization if we're holding a more privileged token
+	// already
+	if !store.tryStoredSecondFactor(r) {
+		sentToken := r.Header.Get("Heroku-Two-Factor-Code")
+		if sentToken != "" {
+			// instead of just burning this token, request a specialized one
+			// that can skip two factor checks, and which we'll hold onto
+			secondFactor, err := store.getSkipTwoFactorToken(r)
+			if err != nil {
+				logger.Panic(err)
+			}
+			store.setSecondFactor(r, secondFactor)
+
+			// give the newly stored second factor another try
+			store.tryStoredSecondFactor(r)
+		}
+	}
+
+	w := next(r)
+	return w
+}
+
+func (s *SecondFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
 	authUrl := "https://" + r.Host + "/oauth/authorizations"
 	auth := r.Header.Get("Authorization")
 	sentToken := r.Header.Get("Heroku-Two-Factor-Code")
@@ -135,4 +119,31 @@ func getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
 		token:     responseData.AccessToken.Token,
 	}
 	return secondFactor, nil
+}
+
+func (s *SecondFactorStore) setSecondFactor(r *http.Request, secondFactor *SecondFactor) {
+	auth := r.Header.Get("Authorization")
+	s.secondFactorMap[auth] = secondFactor
+	logger.Printf("2FA token acquired; set in cache\n")
+}
+
+func (s *SecondFactorStore) tryStoredSecondFactor(r *http.Request) bool {
+	auth := r.Header.Get("Authorization")
+	secondFactor, ok := s.secondFactorMap[auth]
+
+	if ok {
+		if secondFactor.expiresAt.After(time.Now()) {
+			r.Header.Set("Authorization", "Bearer "+secondFactor.token)
+			logger.Printf("2FA token held; replaced authorization (valid for %v)\n",
+				secondFactor.expiresAt.Sub(time.Now()))
+			return true
+		} else {
+			delete(s.secondFactorMap, auth)
+			logger.Printf("2FA token expired; removed from cache\n")
+		}
+	} else {
+		logger.Printf("2FA token not held\n")
+	}
+
+	return false
 }
