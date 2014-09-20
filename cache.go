@@ -113,6 +113,7 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 }
 
 func (c *RequestCache) reap() {
+	numKeys := len(c.cacheMap)
 	now := time.Now()
 	expiredKeys := make([]string, 0)
 
@@ -128,7 +129,7 @@ func (c *RequestCache) reap() {
 		delete(c.cacheMap, k)
 	}
 
-	logger.Printf("Reaped %v/%v cache key(s)\n", len(expiredKeys), len(c.cacheMap))
+	logger.Printf("Reaped %v/%v cache key(s)\n", len(expiredKeys), numKeys)
 }
 
 func (c *RequestCache) setCache(request *http.Request, headers http.Header, content []byte) {
