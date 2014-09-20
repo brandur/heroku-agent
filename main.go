@@ -65,6 +65,7 @@ func main() {
 	// handle common process-killing signals so we can gracefully shut down
 	go handleSignals(l)
 
+	// periodically reap the cache so that we don't bloat out of control
 	go ReapCache()
 
 	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
