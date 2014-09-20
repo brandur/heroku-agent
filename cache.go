@@ -100,13 +100,13 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 
 	cached, ok := c.cacheMap[c.buildCacheKey(request)]
 	if !ok {
-		logger.Printf("Cache miss: %s... %s%s\n",
+		logger.Printf("[cache] Cache miss: %s... %s%s\n",
 			auth[0:10], request.Host, request.URL.String())
 
 		return nil, false
 	}
 
-	logger.Printf("Cache hit: %s... %s%s [etag=%s]\n",
+	logger.Printf("[cache] Cache hit: %s... %s%s [etag=%s]\n",
 		auth[0:10], request.Host, request.URL.String(), cached.etag)
 
 	return cached, true
@@ -129,7 +129,7 @@ func (c *RequestCache) reap() {
 		delete(c.cacheMap, k)
 	}
 
-	logger.Printf("Reaped %v/%v cache key(s)\n", len(expiredKeys), numKeys)
+	logger.Printf("[cache] Reaped %v/%v cache key(s)\n", len(expiredKeys), numKeys)
 }
 
 func (c *RequestCache) setCache(request *http.Request, headers http.Header, content []byte) {
@@ -164,6 +164,6 @@ func (c *RequestCache) setCache(request *http.Request, headers http.Header, cont
 	defer c.mutex.Unlock()
 	c.cacheMap[c.buildCacheKey(request)] = cached
 
-	logger.Printf("Cache store: %s... %s%s [etag=%s]\n",
+	logger.Printf("[cache] Cache store: %s... %s%s [etag=%s]\n",
 		auth[0:10], request.Host, url, etag)
 }

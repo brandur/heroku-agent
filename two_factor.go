@@ -147,7 +147,7 @@ func (s *SecondFactorStore) reap() {
 		delete(s.secondFactorMap, k)
 	}
 
-	logger.Printf("Reaped %v/%v second factor(s)\n", len(expiredKeys), numKeys)
+	logger.Printf("[2fa] Reaped %v/%v second factor(s)\n", len(expiredKeys), numKeys)
 }
 
 func (s *SecondFactorStore) setSecondFactor(r *http.Request, secondFactor *SecondFactor) {
@@ -155,7 +155,7 @@ func (s *SecondFactorStore) setSecondFactor(r *http.Request, secondFactor *Secon
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.secondFactorMap[auth] = secondFactor
-	logger.Printf("2FA token acquired; set in cache\n")
+	logger.Printf("[2fa] 2FA token acquired; set in cache\n")
 }
 
 func (s *SecondFactorStore) tryStoredSecondFactor(r *http.Request) bool {
@@ -165,15 +165,15 @@ func (s *SecondFactorStore) tryStoredSecondFactor(r *http.Request) bool {
 	if ok {
 		if secondFactor.expiresAt.After(time.Now()) {
 			r.Header.Set("Authorization", "Bearer "+secondFactor.token)
-			logger.Printf("2FA token held; replaced authorization (valid for %v)\n",
+			logger.Printf("[2fa] 2FA token held; replaced authorization (valid for %v)\n",
 				secondFactor.expiresAt.Sub(time.Now()))
 			return true
 		} else {
 			delete(s.secondFactorMap, auth)
-			logger.Printf("2FA token expired; removed from cache\n")
+			logger.Printf("[2fa] 2FA token expired; removed from cache\n")
 		}
 	} else {
-		logger.Printf("2FA token not held\n")
+		logger.Printf("[2fa] 2FA token not held\n")
 	}
 
 	return false
