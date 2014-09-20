@@ -45,6 +45,15 @@ func init() {
 	}
 }
 
+func ReapSecondFactorStore() {
+	for {
+		select {
+		case <-time.After(20 * time.Minute):
+			store.reap()
+		}
+	}
+}
+
 func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
 	// replace our sent authorization if we're holding a more privileged token
 	// already
@@ -121,8 +130,30 @@ func (s *SecondFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFacto
 	return secondFactor, nil
 }
 
+func (s *SecondFactorStore) reap() {
+	numKeys := len(s.secondFactorMap)
+	now := time.Now()
+	expiredKeys := make([]string, 0)
+
+	for k, v := range s.secondFactorMap {
+		if now.After(v.expiresAt) {
+			expiredKeys = append(expiredKeys, k)
+		}
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	for _, k := range expiredKeys {
+		delete(s.secondFactorMap, k)
+	}
+
+	logger.Printf("Reaped %v/%v second factor(s)\n", len(expiredKeys), numKeys)
+}
+
 func (s *SecondFactorStore) setSecondFactor(r *http.Request, secondFactor *SecondFactor) {
 	auth := r.Header.Get("Authorization")
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	s.secondFactorMap[auth] = secondFactor
 	logger.Printf("2FA token acquired; set in cache\n")
 }

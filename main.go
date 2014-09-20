@@ -79,8 +79,10 @@ func main() {
 	// handle common process-killing signals so we can gracefully shut down
 	go HandleSignals(listener)
 
-	// periodically reap the cache so that we don't bloat out of control
+	// periodically reap the cache and second factor storeso that we don't
+	// bloat out of control
 	go ReapCache()
+	go ReapSecondFactorStore()
 
 	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
 		LogHandler,
