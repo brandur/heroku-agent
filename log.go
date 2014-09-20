@@ -7,7 +7,7 @@ import (
 )
 
 func LogHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
-	fmt.Printf("Request: %s %s [start]\n", r.Method, r.URL.String())
+	fmt.Printf("Request: %s %s%s [start]\n", r.Method, r.Host, r.URL.String())
 
 	w := next(r)
 
@@ -16,8 +16,8 @@ func LogHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorde
 		requestId = " [request_id=" + requestId + "]"
 	}
 
-	fmt.Printf("Request: %s %s [finish] [status=%v]%s\n",
-		r.Method, r.URL.String(), w.Code, requestId)
+	fmt.Printf("Request: %s %s%s [finish] [status=%v]%s\n",
+		r.Method, r.Host, r.URL.String(), w.Code, requestId)
 
 	return w
 }
