@@ -55,6 +55,8 @@ func main() {
 	// handle common process-killing signals so we can gracefully shut down
 	handleSignals(l)
 
+	ReapCache()
+
 	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
 		LogHandler,
 		TwoFactorHandler,

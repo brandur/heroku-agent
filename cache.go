@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"time"
 )
 
 var (
@@ -12,17 +14,22 @@ var (
 )
 
 type CachedResponse struct {
-	content []byte
-	etag    string
-	header  http.Header
+	content   []byte
+	etag      string
+	expiresAt time.Time
+	header    http.Header
 }
 
 type RequestCache struct {
-	cacheMap map[string]map[string]*CachedResponse
+	cacheMap map[string]*CachedResponse
+	mutex    *sync.Mutex
 }
 
 func init() {
-	cache = newRequestCache()
+	cache = &RequestCache{
+		cacheMap: make(map[string]*CachedResponse),
+		mutex:    &sync.Mutex{},
+	}
 	contentHeaders = map[string]bool{
 		"Content-Encoding": true,
 		"Content-Length":   true,
@@ -67,10 +74,18 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 	return w
 }
 
-func newRequestCache() *RequestCache {
-	return &RequestCache{
-		cacheMap: make(map[string]map[string]*CachedResponse),
-	}
+func ReapCache() {
+	go func() {
+		select {
+		case <-time.After(1 * time.Minute):
+			cache.reap()
+		}
+	}()
+}
+
+func (c *RequestCache) buildCacheKey(request *http.Request) string {
+	auth := request.Header.Get("Authorization")
+	return auth + ":" + request.Method + ":" + request.URL.String()
 }
 
 func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
@@ -78,14 +93,14 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 		return nil, false
 	}
 
-	auths, ok := request.Header["Authorization"]
-	if !ok {
+	auth := request.Header.Get("Authorization")
+	if auth == "" {
 		return nil, false
 	}
 
-	auth := auths[0]
 	url := request.URL.String()
-	cached, ok := c.cacheMap[auth][url]
+	cacheKey := c.buildCacheKey(request)
+	cached, ok := c.cacheMap[cacheKey]
 	if !ok {
 		fmt.Printf("Cache miss: %s... %s\n", auth[0:10], url)
 		return nil, false
@@ -95,28 +110,42 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 	return cached, true
 }
 
+func (c *RequestCache) reap() {
+	now := time.Now()
+	expiredKeys := make([]string, 3)
+
+	for k, v := range c.cacheMap {
+		if now.After(v.expiresAt) {
+			expiredKeys = append(expiredKeys, k)
+		}
+	}
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	for _, k := range expiredKeys {
+		delete(c.cacheMap, k)
+	}
+
+	fmt.Printf("Reaped %i cache key(s)\n", len(expiredKeys))
+}
+
 func (c *RequestCache) setCache(request *http.Request, headers http.Header, content []byte) {
-	auths, ok := request.Header["Authorization"]
-	if !ok {
+	auth := request.Header.Get("Authorization")
+	if auth == "" {
 		return
 	}
 
-	etags, ok := headers["Etag"]
-	if !ok {
+	etag := headers.Get("Etag")
+	if etag == "" {
 		return
 	}
 
-	auth := auths[0]
-	if _, ok = c.cacheMap[auth]; !ok {
-		c.cacheMap[auths[0]] = make(map[string]*CachedResponse)
-	}
-
-	etag := etags[0]
 	url := request.URL.String()
 	cached := &CachedResponse{
-		content: content,
-		header:  make(http.Header),
-		etag:    etag,
+		content:   content,
+		expiresAt: time.Now().Add(60 * time.Minute),
+		header:    make(http.Header),
+		etag:      etag,
 	}
 
 	// store Content-* headers for an accurate cached response
@@ -128,9 +157,10 @@ func (c *RequestCache) setCache(request *http.Request, headers http.Header, cont
 		}
 	}
 
-	c.cacheMap[auth][url] = cached
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	cacheKey := c.buildCacheKey(request)
+	c.cacheMap[cacheKey] = cached
 
 	fmt.Printf("Cache store: %s... %s [etag=%s]\n", auth[0:10], url, etag)
-
-	// @todo: check to make sure cache size doesn't become unmanagable
 }
