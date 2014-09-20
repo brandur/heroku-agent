@@ -85,7 +85,8 @@ func ReapCache() {
 
 func (c *RequestCache) buildCacheKey(request *http.Request) string {
 	auth := request.Header.Get("Authorization")
-	return auth + ":" + request.Method + ":" + request.Host + ":" + request.URL.String()
+	url := request.URL.String()
+	return auth + ":" + request.Method + ":" + request.Host + ":" + url
 }
 
 func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
