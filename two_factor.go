@@ -108,7 +108,6 @@ func getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
 	req.Header.Set("Authorization", auth)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Heroku-Two-Factor-Code", sentToken)
-	req.Header.Set("X-Heroku-Sudo", "true")
 
 	resp, err := client.Do(req)
 	if err != nil {
