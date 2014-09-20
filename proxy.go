@@ -18,7 +18,7 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 	defer resp.Body.Close()
 
@@ -33,7 +33,7 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 	w.WriteHeader(resp.StatusCode)
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	return w

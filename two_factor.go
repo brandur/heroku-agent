@@ -55,7 +55,7 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseR
 			var err error
 			secondFactor, err := getSkipTwoFactorToken(r)
 			if err != nil {
-				panic(err)
+				logger.Panic(err)
 			}
 
 			auth := r.Header.Get("Authorization")
