@@ -147,7 +147,8 @@ func (s *SecondFactorStore) reap() {
 		delete(s.secondFactorMap, k)
 	}
 
-	logger.Printf("[2fa] Reaped %v/%v second factor(s)\n", len(expiredKeys), numKeys)
+	logger.Printf("[2fa] Reaped %v of %v second factor(s)\n",
+		len(expiredKeys), numKeys)
 }
 
 func (s *SecondFactorStore) setSecondFactor(r *http.Request, secondFactor *SecondFactor) {
