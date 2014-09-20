@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	homedir "github.com/mitchellh/go-homedir"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -11,12 +12,16 @@ import (
 	"syscall"
 )
 
+var (
+	logger *log.Logger
+)
+
 func handleSignals(l net.Listener) {
 	sigc := make(chan os.Signal, 1)
 	// wait for SIGINT, SIGKILL, or SIGTERM
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
 	sig := <-sigc
-	fmt.Printf("Caught signal %s: shutting down\n", sig)
+	logger.Printf("Caught signal %s: shutting down\n", sig)
 	// stop listening (and unlink the socket if unix type)
 	l.Close()
 	os.Exit(0)
@@ -29,6 +34,7 @@ func fail(err error) {
 
 func init() {
 	client = &http.Client{}
+	logger = log.New(os.Stdout, "[heroku-agent] ", log.Ltime)
 }
 
 func main() {
@@ -60,7 +66,7 @@ func main() {
 		fail(err)
 	}
 
-	fmt.Printf("Serving on: %s\n", socketPath)
+	logger.Printf("Serving on: %s\n", socketPath)
 
 	// handle common process-killing signals so we can gracefully shut down
 	go handleSignals(l)

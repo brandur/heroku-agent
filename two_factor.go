@@ -30,15 +30,15 @@ func tryStoredSecondFactor(r *http.Request) bool {
 	if ok {
 		if secondFactor.expiresAt.After(time.Now()) {
 			r.Header.Set("Authorization", "Bearer "+secondFactor.token)
-			fmt.Printf("2FA token held; replaced authorization (valid for %v)\n",
+			logger.Printf("2FA token held; replaced authorization (valid for %v)\n",
 				secondFactor.expiresAt.Sub(time.Now()))
 			return true
 		} else {
 			delete(secondFactors, auth)
-			fmt.Printf("2FA token expired; removed from cache\n")
+			logger.Printf("2FA token expired; removed from cache\n")
 		}
 	} else {
-		fmt.Printf("2FA token not held\n")
+		logger.Printf("2FA token not held\n")
 	}
 
 	return false
@@ -60,7 +60,7 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseR
 
 			auth := r.Header.Get("Authorization")
 			secondFactors[auth] = secondFactor
-			fmt.Printf("2FA token acquired; set in cache\n")
+			logger.Printf("2FA token acquired; set in cache\n")
 
 			// give the newly stored second factor another try
 			tryStoredSecondFactor(r)
