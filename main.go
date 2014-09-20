@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -43,6 +44,12 @@ func main() {
 
 	l, err := net.Listen("unix", socketPath)
 	if err != nil {
+		// it would be nice to have a better way than string matching to detect
+		// this error type
+		if strings.Contains(err.Error(), "address already in use") {
+			fmt.Printf("heroku-agent already running at %s\n", socketPath)
+			os.Exit(0)
+		}
 		fail(err)
 	}
 
