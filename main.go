@@ -10,25 +10,12 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 )
 
 var (
 	logger *log.Logger
 )
-
-func handleSignals(l net.Listener) {
-	sigc := make(chan os.Signal, 1)
-	// wait for SIGINT, SIGKILL, or SIGTERM
-	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
-	sig := <-sigc
-	logger.Printf("Caught signal %s: shutting down\n", sig)
-	// stop listening (and unlink the socket if unix type)
-	l.Close()
-	os.Exit(0)
-}
 
 func fail(err error) {
 	fmt.Printf("Error: %s\n", err.Error())
@@ -78,7 +65,7 @@ func initListener() net.Listener {
 		fail(err)
 	}
 
-	logger.Printf("Serving on: %s\n", socketPath)
+	logger.Printf("Listening on: %s\n", socketPath)
 	return l
 }
 
@@ -90,7 +77,7 @@ func main() {
 	listener := initListener()
 
 	// handle common process-killing signals so we can gracefully shut down
-	go handleSignals(listener)
+	go HandleSignals(listener)
 
 	// periodically reap the cache so that we don't bloat out of control
 	go ReapCache()
