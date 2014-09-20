@@ -113,6 +113,8 @@ func getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 201 {
 		return nil, fmt.Errorf("Unexpected response code: %v", resp.StatusCode)
 	}
