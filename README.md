@@ -6,7 +6,7 @@ It provides the following features:
 
 * **Conditional requests:** Caches response bodies and checks their freshness via etag, which can greatly reduce the amount of data that needs to be sent over the wire.
 * **TCP connection pooling:** heroku-agent can keep connections open to the Heroku API and its various peripheral services, which avoids the expensive overhead of opening SSL connections for requests that occur during the keep-alive window.
-* **Second factor management:** Stores and manages the lifecycle of a second authentication factor so that clients are only re-prompted when absolutely necessary.
+* **Second factor management:** Stores and manages the lifecycle of a second authentication factor so that clients are only re-prompted when necessary.
 
 ## Benchmarks
 
