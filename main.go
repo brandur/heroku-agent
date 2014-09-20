@@ -15,10 +15,15 @@ func handleSignals(l net.Listener) {
 	// wait for SIGINT, SIGKILL, or SIGTERM
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
 	sig := <-sigc
-	fmt.Printf("Caught signal %s: shutting down.\n", sig)
+	fmt.Printf("Caught signal %s: shutting down\n", sig)
 	// stop listening (and unlink the socket if unix type)
 	l.Close()
 	os.Exit(0)
+}
+
+func fail(err error) {
+	fmt.Printf("Error: %s\n", err.Error())
+	os.Exit(1)
 }
 
 func init() {
@@ -33,19 +38,19 @@ func main() {
 
 	socketPath, err := homedir.Expand(socketPath)
 	if err != nil {
-		panic(err)
+		fail(err)
 	}
 
 	l, err := net.Listen("unix", socketPath)
 	if err != nil {
-		panic(err)
+		fail(err)
 	}
 
 	// Make sure that only the current user can gain access to this socket as
 	// it will hold secrets.
 	err = os.Chmod(socketPath, 0600)
 	if err != nil {
-		panic(err)
+		fail(err)
 	}
 
 	fmt.Printf("Serving on: %s\n", socketPath)
@@ -65,6 +70,6 @@ func main() {
 	server := &http.Server{}
 	err = server.Serve(l)
 	if err != nil {
-		panic(err)
+		fail(err)
 	}
 }
