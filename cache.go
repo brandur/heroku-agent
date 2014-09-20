@@ -99,16 +99,16 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 		return nil, false
 	}
 
-	url := request.URL.String()
-	cacheKey := c.buildCacheKey(request)
-	cached, ok := c.cacheMap[cacheKey]
+	cached, ok := c.cacheMap[c.buildCacheKey(request)]
 	if !ok {
-		fmt.Printf("Cache miss: %s... %s%s\n", auth[0:10], request.Host, url)
+		fmt.Printf("Cache miss: %s... %s%s\n",
+			auth[0:10], request.Host, request.URL.String())
+
 		return nil, false
 	}
 
 	fmt.Printf("Cache hit: %s... %s%s [etag=%s]\n",
-		auth[0:10], request.Host, url, cached.etag)
+		auth[0:10], request.Host, request.URL.String(), cached.etag)
 
 	return cached, true
 }
@@ -162,8 +162,7 @@ func (c *RequestCache) setCache(request *http.Request, headers http.Header, cont
 
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	cacheKey := c.buildCacheKey(request)
-	c.cacheMap[cacheKey] = cached
+	c.cacheMap[c.buildCacheKey(request)] = cached
 
 	fmt.Printf("Cache store: %s... %s%s [etag=%s]\n",
 		auth[0:10], request.Host, url, etag)
