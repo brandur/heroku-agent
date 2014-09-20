@@ -14,13 +14,11 @@ func handleSignals(l net.Listener) {
 	sigc := make(chan os.Signal, 1)
 	// wait for SIGINT, SIGKILL, or SIGTERM
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
-	go func(c chan os.Signal) {
-		sig := <-c
-		fmt.Printf("Caught signal %s: shutting down.\n", sig)
-		// stop listening (and unlink the socket if unix type)
-		l.Close()
-		os.Exit(0)
-	}(sigc)
+	sig := <-sigc
+	fmt.Printf("Caught signal %s: shutting down.\n", sig)
+	// stop listening (and unlink the socket if unix type)
+	l.Close()
+	os.Exit(0)
 }
 
 func init() {
@@ -53,9 +51,9 @@ func main() {
 	fmt.Printf("Serving on: %s\n", socketPath)
 
 	// handle common process-killing signals so we can gracefully shut down
-	handleSignals(l)
+	go handleSignals(l)
 
-	ReapCache()
+	go ReapCache()
 
 	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
 		LogHandler,

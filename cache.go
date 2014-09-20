@@ -75,12 +75,10 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 }
 
 func ReapCache() {
-	go func() {
-		select {
-		case <-time.After(1 * time.Minute):
-			cache.reap()
-		}
-	}()
+	select {
+	case <-time.After(1 * time.Minute):
+		cache.reap()
+	}
 }
 
 func (c *RequestCache) buildCacheKey(request *http.Request) string {
