@@ -97,7 +97,7 @@ func main() {
 	// handle common process-killing signals so we can gracefully shut down
 	go HandleSignals(listener)
 
-	// periodically reap the cache and second factor storeso that we don't
+	// periodically reap the cache and second factor store so that we don't
 	// bloat out of control
 	go ReapCache()
 	go ReapTwoFactorStore()
