@@ -16,7 +16,7 @@ var (
 )
 
 func ProxyHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
-	retries := NumRetries
+	retriesLeft := NumRetries
 
 retry:
 	w, err := next(r)
@@ -32,8 +32,8 @@ retry:
 	resp, err := client.Do(req)
 	if err != nil {
 		// retry if this looks like this might be a temporary outage
-		if shouldRetry(err) && retries > 0 {
-			retries -= 1
+		if shouldRetry(err) && retriesLeft > 0 {
+			retriesLeft -= 1
 			goto retry
 		}
 
