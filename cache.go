@@ -52,6 +52,9 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseReco
 	w, err := next(r)
 
 	if isCached && (w.Code == 304 || err != nil) {
+		// This circuit breaker allows a fallback to cache if there was a
+		// problem upstream. I haven't noticed any negative side effects so
+		// far, but this may be removed in a future version.
 		if err != nil {
 			logger.Printf("[cache] error: %s\n", err.Error())
 			logger.Printf("[cache] Error upstream; responding with cache response\n",
