@@ -10,8 +10,11 @@ var (
 	client *http.Client
 )
 
-func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
-	w := next(r)
+func ProxyHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
+	w, err := next(r)
+	if err != nil {
+		return w, err
+	}
 
 	url := "https://" + r.Host + r.URL.String()
 	req, err := http.NewRequest(r.Method, url, r.Body)
@@ -20,7 +23,7 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Panic(err)
+		return w, err
 	}
 	defer resp.Body.Close()
 
@@ -29,8 +32,8 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 	w.WriteHeader(resp.StatusCode)
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		logger.Panic(err)
+		return w, err
 	}
 
-	return w
+	return w, nil
 }

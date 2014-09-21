@@ -37,7 +37,7 @@ func init() {
 	}
 }
 
-func CacheHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
+func CacheHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
 	cached, isCached := cache.getCache(r)
 
 	// don't try our cache if the client sent their own cache attempt
@@ -49,7 +49,10 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 		r.Header.Set("If-None-Match", cached.etag)
 	}
 
-	w := next(r)
+	w, err := next(r)
+	if err != nil {
+		return w, err
+	}
 
 	if isCached && w.Code == 304 {
 		newWriter := httptest.NewRecorder()
@@ -70,7 +73,7 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 		cache.setCache(r, w.Header(), w.Body.Bytes())
 	}
 
-	return w
+	return w, nil
 }
 
 func ReapCache() {

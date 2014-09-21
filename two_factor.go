@@ -54,7 +54,7 @@ func ReapSecondFactorStore() {
 	}
 }
 
-func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
+func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
 	// replace our sent authorization if we're holding a more privileged token
 	// already
 	if !store.tryStoredSecondFactor(r) {
@@ -73,8 +73,7 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseR
 		}
 	}
 
-	w := next(r)
-	return w
+	return next(r)
 }
 
 func (s *SecondFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {

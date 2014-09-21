@@ -5,10 +5,11 @@ import (
 	"net/http/httptest"
 )
 
-func LogHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorder {
+func LogHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
 	logger.Printf("[log] Request: %s %s%s [start]\n", r.Method, r.Host, r.URL.String())
 
-	w := next(r)
+	// in case of an error -- keep going
+	w, err := next(r)
 
 	requestId := w.Header().Get("Request-Id")
 	if requestId != "" {
@@ -18,5 +19,5 @@ func LogHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecorde
 	logger.Printf("[log] Request: %s %s%s [finish] [status=%v]%s\n",
 		r.Method, r.Host, r.URL.String(), w.Code, requestId)
 
-	return w
+	return w, err
 }
