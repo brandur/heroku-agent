@@ -90,7 +90,7 @@ func main() {
 	// periodically reap the cache and second factor storeso that we don't
 	// bloat out of control
 	go ReapCache()
-	go ReapSecondFactorStore()
+	go ReapTwoFactorStore()
 
 	http.HandleFunc("/", BuildHandlerChain([]HandlerFunc{
 		LogHandler,

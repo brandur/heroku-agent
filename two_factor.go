@@ -17,7 +17,7 @@ type SecondFactor struct {
 }
 
 var (
-	store *SecondFactorStore
+	store *TwoFactorStore
 )
 
 type CreateAuthorizationRequest struct {
@@ -33,19 +33,19 @@ type CreateAuthorizationResponse struct {
 	} `json:"access_token"`
 }
 
-type SecondFactorStore struct {
+type TwoFactorStore struct {
 	secondFactorMap map[string]*SecondFactor
 	mutex           *sync.Mutex
 }
 
 func init() {
-	store = &SecondFactorStore{
+	store = &TwoFactorStore{
 		secondFactorMap: make(map[string]*SecondFactor),
 		mutex:           &sync.Mutex{},
 	}
 }
 
-func ReapSecondFactorStore() {
+func ReapTwoFactorStore() {
 	for {
 		select {
 		case <-time.After(20 * time.Minute):
@@ -76,7 +76,7 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.Response
 	return next(r)
 }
 
-func (s *SecondFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
+func (s *TwoFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
 	authUrl := "https://" + r.Host + "/oauth/authorizations"
 	auth := r.Header.Get("Authorization")
 	sentToken := r.Header.Get("Heroku-Two-Factor-Code")
@@ -129,7 +129,7 @@ func (s *SecondFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFacto
 	return secondFactor, nil
 }
 
-func (s *SecondFactorStore) reap() {
+func (s *TwoFactorStore) reap() {
 	numKeys := len(s.secondFactorMap)
 	now := time.Now()
 	expiredKeys := make([]string, 0)
@@ -150,7 +150,7 @@ func (s *SecondFactorStore) reap() {
 		len(expiredKeys), numKeys)
 }
 
-func (s *SecondFactorStore) setSecondFactor(r *http.Request, secondFactor *SecondFactor) {
+func (s *TwoFactorStore) setSecondFactor(r *http.Request, secondFactor *SecondFactor) {
 	auth := r.Header.Get("Authorization")
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -158,7 +158,7 @@ func (s *SecondFactorStore) setSecondFactor(r *http.Request, secondFactor *Secon
 	logger.Printf("[2fa] 2FA token acquired; set in cache\n")
 }
 
-func (s *SecondFactorStore) tryStoredSecondFactor(r *http.Request) bool {
+func (s *TwoFactorStore) tryStoredSecondFactor(r *http.Request) bool {
 	auth := r.Header.Get("Authorization")
 	secondFactor, ok := s.secondFactorMap[auth]
 
