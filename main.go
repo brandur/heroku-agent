@@ -33,11 +33,13 @@ func fail(err error) {
 
 func init() {
 	transport := &http.Transport{
-		// More aggressive timeout to minimize waits on a bad connection;
-		// switch to `Timeout` on `http.Client` once we get to Go 1.3
-		ResponseHeaderTimeout: 10 * time.Second,
+		Dial: (&net.Dialer{
+			KeepAlive: 1 * time.Minute,
+		}).Dial,
 	}
 	client = &http.Client{
+		// More aggressive timeout to minimize waits on a bad connection
+		Timeout:   10 * time.Second,
 		Transport: transport,
 	}
 }
