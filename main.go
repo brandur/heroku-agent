@@ -27,7 +27,7 @@ func copyHeaders(source http.Header, destination http.Header) {
 }
 
 func fail(err error) {
-	fmt.Printf("Error: %s\n", err.Error())
+	fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	os.Exit(1)
 }
 
