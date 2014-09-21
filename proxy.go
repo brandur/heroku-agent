@@ -4,6 +4,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+)
+
+const (
+	NumRetries = 2
 )
 
 var (
@@ -11,6 +16,9 @@ var (
 )
 
 func ProxyHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
+	retries := NumRetries
+
+retry:
 	w, err := next(r)
 	if err != nil {
 		return w, err
@@ -23,6 +31,12 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseReco
 
 	resp, err := client.Do(req)
 	if err != nil {
+		// retry if this looks like this might be a temporary outage
+		if shouldRetry(err) && retries > 0 {
+			retries -= 1
+			goto retry
+		}
+
 		return w, err
 	}
 	defer resp.Body.Close()
@@ -36,4 +50,8 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseReco
 	}
 
 	return w, nil
+}
+
+func shouldRetry(err error) bool {
+	return strings.Contains(err.Error(), "connection reset by peer")
 }
