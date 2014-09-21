@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -31,7 +32,13 @@ func fail(err error) {
 }
 
 func init() {
-	client = &http.Client{}
+	transport := &http.Transport{
+		// More aggressive timeout to minimize waits on a bad connection
+		ResponseHeaderTimeout: 10 * time.Second,
+	}
+	client = &http.Client{
+		Transport: transport,
+	}
 }
 
 func initLogger(verbose bool) *log.Logger {
