@@ -17,6 +17,14 @@ var (
 	logger *log.Logger
 )
 
+func copyHeaders(source http.Header, destination http.Header) {
+	for h, vs := range source {
+		for _, v := range vs {
+			destination.Set(h, v)
+		}
+	}
+}
+
 func fail(err error) {
 	fmt.Printf("Error: %s\n", err.Error())
 	os.Exit(1)

@@ -34,11 +34,3 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 
 	return w
 }
-
-func copyHeaders(source http.Header, destination http.Header) {
-	for h, vs := range source {
-		for _, v := range vs {
-			destination.Set(h, v)
-		}
-	}
-}
