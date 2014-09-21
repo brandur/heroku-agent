@@ -50,11 +50,14 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseReco
 	}
 
 	w, err := next(r)
-	if err != nil {
-		return w, err
-	}
 
-	if isCached && w.Code == 304 {
+	if isCached && (w.Code == 304 || err != nil) {
+		if err != nil {
+			logger.Printf("[cache] error: %s\n", err.Error())
+			logger.Printf("[cache] Error upstream; responding with cache response\n",
+				err.Error())
+		}
+
 		newWriter := httptest.NewRecorder()
 
 		// remove headers that may be inaccurate on a cached response
@@ -69,11 +72,11 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseReco
 
 		// move to the new writer reference and discard the old one
 		w = newWriter
-	} else {
+	} else if err == nil {
 		cache.setCache(r, w.Header(), w.Body.Bytes())
 	}
 
-	return w, nil
+	return w, err
 }
 
 func ReapCache() {
