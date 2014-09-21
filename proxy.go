@@ -24,11 +24,7 @@ func ProxyHandler(r *http.Request, next NextHandlerFunc) *httptest.ResponseRecor
 
 	w := next(r)
 
-	for h, vs := range resp.Header {
-		for _, v := range vs {
-			w.Header().Set(h, v)
-		}
-	}
+	copyHeaders(resp.Header, w.Header())
 
 	w.WriteHeader(resp.StatusCode)
 	_, err = io.Copy(w, resp.Body)
