@@ -33,7 +33,8 @@ func fail(err error) {
 
 func init() {
 	transport := &http.Transport{
-		// More aggressive timeout to minimize waits on a bad connection
+		// More aggressive timeout to minimize waits on a bad connection;
+		// switch to `Timeout` on `http.Client` once we get to Go 1.3
 		ResponseHeaderTimeout: 10 * time.Second,
 	}
 	client = &http.Client{
