@@ -10,7 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
+	"syscall"
 	"time"
 )
 
@@ -67,11 +67,11 @@ func initListener() net.Listener {
 
 	l, err := net.Listen("unix", socketPath)
 	if err != nil {
-		// it would be nice to have a better way than string matching to detect
-		// this error type
-		if strings.Contains(err.Error(), "address already in use") {
-			fmt.Printf("heroku-agent already running at %s\n", socketPath)
-			os.Exit(0)
+		if e, ok := err.(*net.OpError).Err.(*os.SyscallError); ok {
+			if e.Err == syscall.EADDRINUSE {
+				fmt.Printf("heroku-agent already running at %s\n", socketPath)
+				os.Exit(0)
+			}
 		}
 		fail(err)
 	}
