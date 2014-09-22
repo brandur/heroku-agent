@@ -64,6 +64,8 @@ sys     11.71s
 
 ### hk
 
+More than a 4x speed improvement.
+
 ``` bash
 # WITH heroku-agent
 $ time (for i in `seq 1 100`; do hk apps > /dev/null ; done)
