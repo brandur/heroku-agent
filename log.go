@@ -3,9 +3,11 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"time"
 )
 
 func LogHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
+	start := time.Now()
 	logger.Printf("[log] Request: %s %s%s [start]\n", r.Method, r.Host, r.URL.String())
 
 	// in case of an error -- keep going
@@ -16,8 +18,8 @@ func LogHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecord
 		requestId = " [request_id=" + requestId + "]"
 	}
 
-	logger.Printf("[log] Request: %s %s%s [finish] [status=%v]%s\n",
-		r.Method, r.Host, r.URL.String(), w.Code, requestId)
+	logger.Printf("[log] Request: %s %s%s [finish] [elapsed=%v] [status=%v]%s\n",
+		r.Method, r.Host, r.URL.String(), time.Now().Sub(start), w.Code, requestId)
 
 	return w, err
 }
