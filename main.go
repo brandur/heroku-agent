@@ -9,7 +9,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"syscall"
 )
 
@@ -100,4 +102,16 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
+}
+
+// Unfortunately, the Toolbelt sends a user's password via query parameter,
+// which shows up in a stringified URL. This method scrubs that out for safe
+// display on-screen and in-logs.
+func safeUrl(u *url.URL) string {
+	password := u.Query().Get("password")
+	s := u.String()
+	if password != "" {
+		s = strings.Replace(s, password, "[scrubbed]", 1)
+	}
+	return s
 }

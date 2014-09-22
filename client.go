@@ -23,7 +23,7 @@ func (t *InstrumentedTransport) CancelRequest(r *http.Request) {
 
 func (t *InstrumentedTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	start := time.Now()
-	logger.Printf("[client] Request: %s %s [start]\n", r.Method, r.URL.String())
+	logger.Printf("[client] Request: %s %s [start]\n", r.Method, safeUrl(r.URL))
 
 	// unfortunately, we have to skip SSL verification on herokudev domains to
 	// make things work because they are not CA-signed
@@ -43,7 +43,7 @@ func (t *InstrumentedTransport) RoundTrip(r *http.Request) (*http.Response, erro
 	}
 
 	logger.Printf("[client] Response: %s %s [finish] [elapsed=%v]%v\n",
-		r.Method, r.URL.String(), time.Now().Sub(start), status)
+		r.Method, safeUrl(r.URL), time.Now().Sub(start), status)
 
 	return resp, err
 }
