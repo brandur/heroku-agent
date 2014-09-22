@@ -10,7 +10,7 @@ It provides the following features:
 
 ## Installation
 
-# Common
+### Common (do this for both hk and Heroku CLI)
 
 ``` bash
 $ go get -u github.com/brandur/heroku-agent
@@ -20,7 +20,7 @@ export HEROKU_AGENT_SOCK=~/.heroku-agent.sock
 (nohup heroku-agent -v >> ~/.heroku-agent.log &)
 ```
 
-## hk
+### hk
 
 ``` bash
 $ hk update
@@ -29,7 +29,7 @@ $ go get -u github.com/heroku/hk
 $ hk apps
 ```
 
-## heroku
+### heroku
 
 **WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. The following instructions will **not work quite yet**. Ask Brandur for details on how to install a prerelease.
 
