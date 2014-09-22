@@ -44,7 +44,7 @@ $ heroku config
 
 ### hk
 
-hk regularly gets more than a 4x improvement in speed for a commands that are performed relatively close together.
+hk regularly gets more than a 4x improvement in speed for commands that are performed relatively close together.
 
 ``` bash
 # WITH heroku-agent
@@ -64,7 +64,7 @@ sys     2.20s
 
 ### heroku
 
-Similarly, we observe roughly a 2.5x speedup with the Heroku CLI. This improvement might be greater, but the CLI spends a lot of time just warming up.
+Similarly, we observe roughly a 2.5x speedup with the Heroku CLI. This improvement might be greater, but the CLI spends a lot of time warming up to execute just a single command.
 
 ```
 # WITH heroku-agent
