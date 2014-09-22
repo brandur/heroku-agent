@@ -21,11 +21,18 @@ retry:
 		return w, err
 	}
 
+	// if the client has requested HTTP specifically, give them HTTP, but
+	// otherwise always default to HTTPS
+	scheme := "https"
+	if strings.HasSuffix(r.Host, ":80") {
+		scheme = "http"
+	}
+
 	u := url.URL{
 		Host:     r.Host,
 		Path:     r.URL.Path,
 		RawQuery: r.URL.RawQuery,
-		Scheme:   "https",
+		Scheme:   scheme,
 	}
 
 	req, err := http.NewRequest(r.Method, u.String(), r.Body)
