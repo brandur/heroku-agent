@@ -69,7 +69,7 @@ func initListener() net.Listener {
 	if err != nil {
 		if e, ok := err.(*net.OpError).Err.(*os.SyscallError); ok {
 			if e.Err == syscall.EADDRINUSE {
-				fmt.Printf("heroku-agent already running at %s\n", socketPath)
+				logger.Printf("heroku-agent already running at %s\n", socketPath)
 				os.Exit(0)
 			}
 		}
