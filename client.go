@@ -42,6 +42,7 @@ func init() {
 		Dial: (&net.Dialer{
 			KeepAlive: 1 * time.Minute,
 		}).Dial,
+		MaxIdleConnsPerHost: 5,
 	}
 	client = &http.Client{
 		// More aggressive timeout to minimize waits on a bad connection
