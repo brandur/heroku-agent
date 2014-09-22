@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 )
 
@@ -20,8 +21,14 @@ retry:
 		return w, err
 	}
 
-	url := "https://" + r.Host + r.URL.String()
-	req, err := http.NewRequest(r.Method, url, r.Body)
+	u := url.URL{
+		Host:     r.Host,
+		Path:     r.URL.Path,
+		RawQuery: r.URL.RawQuery,
+		Scheme:   "https",
+	}
+
+	req, err := http.NewRequest(r.Method, u.String(), r.Body)
 
 	copyHeaders(r.Header, req.Header)
 
