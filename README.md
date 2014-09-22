@@ -20,6 +20,8 @@ export HEROKU_AGENT_SOCK=~/.heroku-agent.sock
 (nohup heroku-agent -v >> ~/.heroku-agent.log &)
 ```
 
+Alternatively, if you are on OSX, you can [try this .plist file](https://gist.github.com/dpiddy/9130e67ec24862706516).
+
 ### hk
 
 ``` bash
