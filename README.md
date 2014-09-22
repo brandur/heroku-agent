@@ -31,7 +31,7 @@ $ hk apps
 
 ## heroku
 
-**WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. The following instructions will **not work quite yet**.
+**WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. The following instructions will **not work quite yet**. Ask Brandur for details on how to install a prerelease.
 
 ``` bash
 $ heroku update
