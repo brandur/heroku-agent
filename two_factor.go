@@ -58,13 +58,15 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.Response
 	// replace our sent authorization if we're holding a more privileged token
 	// already
 	if !store.tryStoredSecondFactor(r) {
+		// If a code was sent up, instead of just burning it, request a
+		// specialized one that can skip two factor checks which we'll hold
+		// onto. Don't do this if the user is trying to login because they
+		// don't yet have any valid authorization.
 		sentToken := r.Header.Get("Heroku-Two-Factor-Code")
-		if sentToken != "" {
-			// instead of just burning this token, request a specialized one
-			// that can skip two factor checks, and which we'll hold onto
+		if sentToken != "" && !isLogin(r) {
 			secondFactor, err := store.getSkipTwoFactorToken(r)
 			if err != nil {
-				logger.Panic(err)
+				return nil, err
 			}
 			store.setSecondFactor(r, secondFactor)
 
@@ -74,6 +76,10 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.Response
 	}
 
 	return next(r)
+}
+
+func isLogin(r *http.Request) bool {
+	return r.URL.Path == "/login"
 }
 
 func (s *TwoFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
