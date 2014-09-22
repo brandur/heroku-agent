@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -22,6 +24,15 @@ func (t *InstrumentedTransport) CancelRequest(r *http.Request) {
 func (t *InstrumentedTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	start := time.Now()
 	logger.Printf("[client] Request: %s %s [start]\n", r.Method, r.URL.String())
+
+	// unfortunately, we have to skip SSL verification on herokudev domains to
+	// make things work because they are not CA-signed
+	if isHerokuDev(r.Host) {
+		t.transport.TLSClientConfig.InsecureSkipVerify = true
+		defer func() {
+			t.transport.TLSClientConfig.InsecureSkipVerify = false
+		}()
+	}
 
 	resp, err := t.transport.RoundTrip(r)
 
@@ -43,6 +54,9 @@ func init() {
 			KeepAlive: 1 * time.Minute,
 		}).Dial,
 		MaxIdleConnsPerHost: 5,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: false,
+		},
 	}
 	client = &http.Client{
 		// More aggressive timeout to minimize waits on a bad connection
@@ -51,4 +65,16 @@ func init() {
 			transport: transport,
 		},
 	}
+}
+
+func isHerokuDev(host string) bool {
+	if strings.HasSuffix(host, ".herokudev.com") {
+		return true
+	}
+
+	if strings.HasSuffix(host, ".herokudev.com:443") {
+		return true
+	}
+
+	return false
 }
