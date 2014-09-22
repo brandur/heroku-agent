@@ -8,7 +8,7 @@ import (
 
 func LogHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
 	start := time.Now()
-	logger.Printf("[log] Request: %s %s%s [start]\n", r.Method, r.Host, r.URL.String())
+	logger.Printf("[log] Request: %s %s [start]\n", r.Method, r.URL.String())
 
 	// in case of an error -- keep going
 	w, err := next(r)
@@ -18,8 +18,8 @@ func LogHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecord
 		requestId = " [request_id=" + requestId + "]"
 	}
 
-	logger.Printf("[log] Request: %s %s%s [finish] [elapsed=%v] [status=%v]%s\n",
-		r.Method, r.Host, r.URL.String(), time.Now().Sub(start), w.Code, requestId)
+	logger.Printf("[log] Response: %s %s [finish] [elapsed=%v] [status=%v]%s\n",
+		r.Method, r.URL.String(), time.Now().Sub(start), w.Code, requestId)
 
 	return w, err
 }

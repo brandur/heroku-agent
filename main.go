@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"syscall"
-	"time"
 )
 
 var (
@@ -29,19 +28,6 @@ func copyHeaders(source http.Header, destination http.Header) {
 func fail(err error) {
 	fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	os.Exit(1)
-}
-
-func init() {
-	transport := &http.Transport{
-		Dial: (&net.Dialer{
-			KeepAlive: 1 * time.Minute,
-		}).Dial,
-	}
-	client = &http.Client{
-		// More aggressive timeout to minimize waits on a bad connection
-		Timeout:   10 * time.Second,
-		Transport: transport,
-	}
 }
 
 func initLogger(verbose bool) *log.Logger {

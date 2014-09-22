@@ -11,10 +11,6 @@ const (
 	NumRetries = 2
 )
 
-var (
-	client *http.Client
-)
-
 func ProxyHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
 	retriesLeft := NumRetries
 
