@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"time"
 )
@@ -94,7 +96,17 @@ func ReapCache() {
 func (c *RequestCache) buildCacheKey(request *http.Request) string {
 	auth := request.Header.Get("Authorization")
 	url := request.URL.String()
-	return auth + ":" + request.Method + ":" + request.Host + ":" + url
+
+	// Poor man's check on `Vary`: basically take all values on which we should
+	// vary and concatenate them. If a value changes, a new cache key will be
+	// generated.
+	varyHeaders := ""
+	for _, v := range strings.Split(request.Header.Get("Vary"), ",") {
+		varyHeaders += v + ":" + request.Header.Get(v)
+	}
+
+	return fmt.Sprintf("%s|%s|%s|%s|%s", auth, request.Method, request.Host,
+		varyHeaders, url)
 }
 
 func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
@@ -104,6 +116,11 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 
 	auth := request.Header.Get("Authorization")
 	if auth == "" {
+		return nil, false
+	}
+
+	// if `Vary` is set to `*` we should never try to cache the request
+	if request.Header.Get("Vary") == "*" {
 		return nil, false
 	}
 
