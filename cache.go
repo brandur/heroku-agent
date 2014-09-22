@@ -95,6 +95,7 @@ func ReapCache() {
 
 func (c *RequestCache) buildCacheKey(request *http.Request) string {
 	auth := request.Header.Get("Authorization")
+	user := request.Header.Get("X-Heroku-Sudo-User")
 	url := request.URL.String()
 
 	// Poor man's check on `Vary`: basically take all values on which we should
@@ -105,8 +106,8 @@ func (c *RequestCache) buildCacheKey(request *http.Request) string {
 		varyHeaders += v + ":" + request.Header.Get(v)
 	}
 
-	return fmt.Sprintf("%s|%s|%s|%s|%s", auth, request.Method, request.Host,
-		varyHeaders, url)
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%s", auth, user, request.Method,
+		request.Host, varyHeaders, url)
 }
 
 func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
