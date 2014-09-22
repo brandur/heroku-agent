@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"time"
 )
@@ -62,8 +63,9 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.Response
 		// specialized one that can skip two factor checks which we'll hold
 		// onto. Don't do this if the user is trying to login because they
 		// don't yet have any valid authorization.
+		auth := r.Header.Get("Authorization")
 		sentToken := r.Header.Get("Heroku-Two-Factor-Code")
-		if sentToken != "" && !isLogin(r) {
+		if hasAuth(auth) && sentToken != "" {
 			secondFactor, err := store.getSkipTwoFactorToken(r)
 			if err != nil {
 				return nil, err
@@ -78,8 +80,9 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.Response
 	return next(r)
 }
 
-func isLogin(r *http.Request) bool {
-	return r.URL.Path == "/login"
+func hasAuth(auth string) bool {
+	// "Og==" is just a colon ":" encoded in base64 (no user/pass)
+	return auth != "" && !strings.HasSuffix(auth, "Og==")
 }
 
 func (s *TwoFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, error) {
