@@ -17,7 +17,7 @@ $ go get -u github.com/brandur/heroku-agent
 
 # in your .bashrc or .zshrc, add this:
 export HEROKU_AGENT_SOCK=~/.heroku-agent.sock
-(nohup heroku-agent -v > ~/.heroku-agent.log / &)
+(nohup heroku-agent -v > ~/.heroku-agent.log &)
 ```
 
 ## hk
