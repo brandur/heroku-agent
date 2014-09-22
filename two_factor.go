@@ -101,7 +101,7 @@ func (s *TwoFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Heroku-Two-Factor-Code", sentToken)
 
-	resp, err := client.Do(req)
+	resp, err := DoRequest(req)
 	if err != nil {
 		return nil, err
 	}

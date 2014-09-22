@@ -67,6 +67,10 @@ func init() {
 	}
 }
 
+func DoRequest(r *http.Request) (*http.Response, error) {
+	return client.Do(r)
+}
+
 func isHerokuDev(host string) bool {
 	if strings.HasSuffix(host, ".herokudev.com") {
 		return true

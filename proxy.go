@@ -25,7 +25,7 @@ retry:
 
 	copyHeaders(r.Header, req.Header)
 
-	resp, err := client.Do(req)
+	resp, err := DoRequest(req)
 	if err != nil {
 		// retry if this looks like this might be a temporary outage
 		if shouldRetry(err) && retriesLeft > 0 {
