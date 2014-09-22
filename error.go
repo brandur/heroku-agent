@@ -24,6 +24,10 @@ func ErrorHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseReco
 		if err != nil {
 			return w, err
 		}
+
+		if w == nil {
+			w = httptest.NewRecorder()
+		}
 		w.WriteHeader(500)
 		w.Write(data)
 	}
