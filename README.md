@@ -42,29 +42,9 @@ $ heroku config
 
 ## Benchmarks
 
-### heroku
-
-We observe roughly a 2.5x speedup with the Heroku CLI. This improvement might be greater, but the CLI spends a lot of time just warming up. See hk below for a much more dramatic increase.
-
-```
-# WITH heroku-agent
-$ time (for i in `seq 1 100`; do heroku info -a mutelight > /dev/null ; done)
-
-real    111.28s
-user    44.02s
-sys     5.64s
-
-# WITHOUT heroku-agent
-$ time (for i in `seq 1 100`; do heroku info -a mutelight > /dev/null ; done)
-
-real    277.81s
-user    50.81s
-sys     6.34s
-```
-
 ### hk
 
-More than a 4x speed improvement.
+hk regularly gets more than a 4x improvement in speed for a commands that are performed relatively close together.
 
 ``` bash
 # WITH heroku-agent
@@ -80,4 +60,24 @@ $ time (for i in `seq 1 100`; do hk info -a mutelight > /dev/null ; done)
 real    94.21s
 user    22.99s
 sys     2.20s
+```
+
+### heroku
+
+Similarly, we observe roughly a 2.5x speedup with the Heroku CLI. This improvement might be greater, but the CLI spends a lot of time just warming up.
+
+```
+# WITH heroku-agent
+$ time (for i in `seq 1 100`; do heroku info -a mutelight > /dev/null ; done)
+
+real    111.28s
+user    44.02s
+sys     5.64s
+
+# WITHOUT heroku-agent
+$ time (for i in `seq 1 100`; do heroku info -a mutelight > /dev/null ; done)
+
+real    277.81s
+user    50.81s
+sys     6.34s
 ```
