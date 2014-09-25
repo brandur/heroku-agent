@@ -33,13 +33,18 @@ $ hk apps
 
 ### heroku
 
-**WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. The following instructions will **not work quite yet**. Ask Brandur for details on how to install a prerelease.
+**WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. Until then, these instructions are a bit janky.
 
 ``` bash
 $ heroku update
+$ rm -r ~/.heroku/client/vendor/gems/excon-0.39.5
+$ git clone https://github.com/brandur/excon -b brandur-unix-proxies ~/.heroku/client/vendor/gems/excon-0.39.5
 $ heroku plugins:update
 $ heroku plugins:install https://github.com/brandur/heroku-agent-plugin
-$ heroku config
+$ heroku apps
+
+# verify that the request happened against heroku-agent
+$ tail ~/.heroku-agent.log
 ```
 
 ## Benchmarks
