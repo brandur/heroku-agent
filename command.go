@@ -25,7 +25,7 @@ func RunCommand(command string) {
 
 func clear() {
 	client := getClient()
-	err := client.Call("Receiver.Clear", []string{}, &[]string{})
+	err := client.Call("RpcReceiver.Clear", []string{}, &[]string{})
 	if err != nil {
 		fail(err)
 	}
@@ -62,7 +62,7 @@ Commands:
 func stats() {
 	client := getClient()
 	state := &State{}
-	err := client.Call("Receiver.State", []string{}, state)
+	err := client.Call("RpcReceiver.State", []string{}, state)
 	if err != nil {
 		fail(err)
 	}
