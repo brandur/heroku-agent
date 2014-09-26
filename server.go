@@ -15,12 +15,14 @@ var (
 )
 
 type State struct {
-	UpAt time.Time
+	StopChan chan bool
+	UpAt     time.Time
 }
 
 func Serve() {
 	state = &State{
-		UpAt: time.Now(),
+		UpAt:     time.Now(),
+		StopChan: make(chan bool),
 	}
 
 	proxyListener := initListener(getProxySocketPath())
@@ -28,12 +30,17 @@ func Serve() {
 
 	// register and start serving on the control socket so that a heroku-agent
 	// running in "command mode" can connect and make a call
-	rpc.Register(new(RpcReceiver))
+	rpc.Register(&RpcReceiver{
+		State: state,
+	})
 	rpc.HandleHTTP()
 	go http.Serve(controlListener, nil)
 
-	// handle common process-killing signals so we can gracefully shut down
-	go handleSignals(proxyListener, controlListener)
+	// allow graceful shutdown
+	go handleStop(state.StopChan, proxyListener, controlListener)
+
+	// handle common process-killing signals
+	go handleSignals(state.StopChan)
 
 	// periodically reap the cache and second factor store so that we don't
 	// bloat out of control
@@ -55,13 +62,18 @@ func Serve() {
 	}
 }
 
-func handleSignals(listeners ...net.Listener) {
+func handleSignals(StopChan chan bool) {
 	sigc := make(chan os.Signal, 1)
 	// wait for SIGINT, SIGKILL, or SIGTERM
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	sig := <-sigc
 	logger.Printf("Caught signal %s: shutting down\n", sig)
+	StopChan <- true
+}
+
+func handleStop(StopChan chan bool, listeners ...net.Listener) {
+	<-StopChan
 
 	// stop listening (and unlink the socket if unix type)
 	for _, listener := range listeners {
@@ -88,11 +100,13 @@ func initListener(socketPath string) net.Listener {
 		fail(err)
 	}
 
-	logger.Printf("Listening on: %s\n", socketPath)
+	logger.Printf("[server] Listening on: %s\n", socketPath)
 	return l
 }
 
+// this type does nothing more than act as a target for our control plane RPC
 type RpcReceiver struct {
+	State *State
 }
 
 func (r *RpcReceiver) Clear(_ []string, _ *[]string) error {
@@ -105,7 +119,7 @@ func (r *RpcReceiver) Clear(_ []string, _ *[]string) error {
 	return nil
 }
 
-func (r *RpcReceiver) State(_ []string, s *State) error {
+func (r *RpcReceiver) GetState(_ []string, s *State) error {
 	start := time.Now()
 	r.logStart("State")
 	defer r.logFinish("State", start)
@@ -119,16 +133,16 @@ func (r *RpcReceiver) Stop(_ []string, _ *[]string) error {
 	r.logStart("Stop")
 	defer r.logFinish("Stop", start)
 
-	logger.Printf("Stopping by instruction of RPC command\n")
-	os.Exit(0)
+	logger.Printf("[rpc] Stopping by instruction of RPC command\n")
+	r.State.StopChan <- true
 	return nil
 }
 
 func (r *RpcReceiver) logFinish(method string, start time.Time) {
-	logger.Printf("[server] Response: RPC: %s [finish] [elapsed=%v]\n", method,
+	logger.Printf("[rpc] Response: RPC: %s [finish] [elapsed=%v]\n", method,
 		time.Now().Sub(start))
 }
 
 func (r *RpcReceiver) logStart(method string) {
-	logger.Printf("[server] Request: RPC: %s [start]\n", method)
+	logger.Printf("[rpc] Request: RPC: %s [start]\n", method)
 }

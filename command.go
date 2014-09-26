@@ -29,11 +29,8 @@ func call(method string, args interface{}, reply interface{}) {
 	client := getClient()
 
 	start := time.Now()
-	logger.Printf("[command] Request: RPC: %s [start]\n", method)
-	defer func() {
-		logger.Printf("[command] Response: RPC: %s [finish] [elapsed=%v]\n", method,
-			time.Now().Sub(start))
-	}()
+	logStart(method)
+	defer logFinish(method, start)
 
 	err := client.Call("RpcReceiver."+method, args, reply)
 	if err != nil {
@@ -69,13 +66,23 @@ Commands:
     clear        Clear daemon's cache and two factor store
     help         Display help text
     state        Display daemon's state
+	stop         Stop daemon
     version      Display version
 `)
 }
 
+func logFinish(method string, start time.Time) {
+	logger.Printf("[command] Response: RPC: %s [finish] [elapsed=%v]\n", method,
+		time.Now().Sub(start))
+}
+
+func logStart(method string) {
+	logger.Printf("[command] Request: RPC: %s [start]\n", method)
+}
+
 func stats() {
 	state := &State{}
-	call("State", []string{}, state)
+	call("GetState", []string{}, state)
 	fmt.Printf("Up: %v\n", time.Now().Sub(state.UpAt))
 }
 
