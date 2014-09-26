@@ -114,6 +114,16 @@ func (r *RpcReceiver) State(_ []string, s *State) error {
 	return nil
 }
 
+func (r *RpcReceiver) Stop(_ []string, _ *[]string) error {
+	start := time.Now()
+	r.logStart("Stop")
+	defer r.logFinish("Stop", start)
+
+	logger.Printf("Stopping by instruction of RPC command\n")
+	os.Exit(0)
+	return nil
+}
+
 func (r *RpcReceiver) logFinish(method string, start time.Time) {
 	logger.Printf("[server] Response: RPC: %s [finish] [elapsed=%v]\n", method,
 		time.Now().Sub(start))

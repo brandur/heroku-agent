@@ -15,6 +15,8 @@ func RunCommand(command string) {
 		help()
 	case command == "state":
 		stats()
+	case command == "stop":
+		stop()
 	case command == "version":
 		version()
 	default:
@@ -75,6 +77,11 @@ func stats() {
 	state := &State{}
 	call("State", []string{}, state)
 	fmt.Printf("Up: %v\n", time.Now().Sub(state.UpAt))
+}
+
+func stop() {
+	call("Stop", []string{}, &[]string{})
+	fmt.Printf("Stopped\n")
 }
 
 func version() {
