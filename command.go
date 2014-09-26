@@ -66,7 +66,7 @@ Commands:
     clear        Clear daemon's cache and two factor store
     help         Display help text
     state        Display daemon's state
-	stop         Stop daemon
+    stop         Stop daemon
     version      Display version
 `)
 }
