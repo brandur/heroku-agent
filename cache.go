@@ -84,6 +84,10 @@ func CacheHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseReco
 	return w, err
 }
 
+func ClearCache() {
+	cache.clear()
+}
+
 func ReapCache() {
 	for {
 		select {
@@ -137,6 +141,14 @@ func (c *RequestCache) getCache(request *http.Request) (*CachedResponse, bool) {
 		auth[0:10], request.Host, request.URL.String(), cached.etag)
 
 	return cached, true
+}
+
+func (c *RequestCache) clear() {
+	numKeys := len(c.cacheMap)
+	for k := range c.cacheMap {
+		delete(c.cacheMap, k)
+	}
+	logger.Printf("[cache] Cleared %v cache key(s)\n", numKeys)
 }
 
 func (c *RequestCache) reap() {
