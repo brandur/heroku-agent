@@ -30,7 +30,7 @@ func Serve() {
 		"~/.heroku-agent-control.sock")
 	controlListener := initListener(controlPath)
 
-	rpc.Register(new(Receiver))
+	rpc.Register(new(RpcReceiver))
 	rpc.HandleHTTP()
 	go http.Serve(controlListener, nil)
 
@@ -94,10 +94,10 @@ func initListener(socketPath string) net.Listener {
 	return l
 }
 
-type Receiver struct {
+type RpcReceiver struct {
 }
 
-func (r *Receiver) Clear(_ []string, _ *[]string) error {
+func (r *RpcReceiver) Clear(_ []string, _ *[]string) error {
 	start := time.Now()
 	r.logStart("Clear")
 	defer r.logFinish("Clear", start)
@@ -107,7 +107,7 @@ func (r *Receiver) Clear(_ []string, _ *[]string) error {
 	return nil
 }
 
-func (r *Receiver) State(_ []string, s *State) error {
+func (r *RpcReceiver) State(_ []string, s *State) error {
 	start := time.Now()
 	r.logStart("State")
 	defer r.logFinish("State", start)
@@ -116,11 +116,11 @@ func (r *Receiver) State(_ []string, s *State) error {
 	return nil
 }
 
-func (r *Receiver) logFinish(name string, start time.Time) {
+func (r *RpcReceiver) logFinish(name string, start time.Time) {
 	logger.Printf("[server] Response: RPC: %s [finish] [elapsed=%v]\n", name,
 		time.Now().Sub(start))
 }
 
-func (r *Receiver) logStart(name string) {
+func (r *RpcReceiver) logStart(name string) {
 	logger.Printf("[server] Request: RPC: %s [start]\n", name)
 }
