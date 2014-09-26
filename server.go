@@ -14,9 +14,6 @@ var (
 	state *State
 )
 
-type Receiver struct {
-}
-
 type State struct {
 	UpAt time.Time
 }
@@ -97,13 +94,13 @@ func initListener(socketPath string) net.Listener {
 	return l
 }
 
+type Receiver struct {
+}
+
 func (r *Receiver) Clear(_ []string, _ *[]string) error {
 	start := time.Now()
-	logger.Printf("[server] Request: RPC: Clear [start]\n")
-	defer func() {
-		logger.Printf("[server] Response: RPC: Clear [finish] [elapsed=%v]\n",
-			time.Now().Sub(start))
-	}()
+	r.logStart("Clear")
+	defer r.logFinish("Clear", start)
 
 	ClearCache()
 	ClearTwoFactorStore()
@@ -112,12 +109,18 @@ func (r *Receiver) Clear(_ []string, _ *[]string) error {
 
 func (r *Receiver) State(_ []string, s *State) error {
 	start := time.Now()
-	logger.Printf("[server] Request: RPC: State [start]\n")
-	defer func() {
-		logger.Printf("[server] Response: RPC: State [finish] [elapsed=%v]\n",
-			time.Now().Sub(start))
-	}()
+	r.logStart("State")
+	defer r.logFinish("State", start)
 
 	s.UpAt = state.UpAt
 	return nil
+}
+
+func (r *Receiver) logFinish(name string, start time.Time) {
+	logger.Printf("[server] Response: RPC: %s [finish] [elapsed=%v]\n", name,
+		time.Now().Sub(start))
+}
+
+func (r *Receiver) logStart(name string) {
+	logger.Printf("[server] Request: RPC: %s [start]\n", name)
 }
