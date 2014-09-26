@@ -36,7 +36,8 @@ func Serve() {
 	rpc.HandleHTTP()
 	go http.Serve(controlListener, nil)
 
-	// allow graceful shutdown
+	// allow graceful shutdown; this is important because Unix domain sockets
+	// will not clean themselves up
 	go handleStop(state.StopChan, proxyListener, controlListener)
 
 	// handle common process-killing signals
