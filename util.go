@@ -55,7 +55,7 @@ func getProxySocketPath() string {
 }
 
 func printUsage() {
-	fmt.Printf("Usage: heroku-agent [-v] [command]")
+	fmt.Printf("Usage: heroku-agent [-v] [command]\n")
 }
 
 // Unfortunately, the Toolbelt sends a user's password via query parameter,

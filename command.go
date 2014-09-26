@@ -58,7 +58,6 @@ func getClient() *rpc.Client {
 func help() {
 	printUsage()
 	fmt.Printf(`
-
 Runs as daemon unless [command] is specified.
 
 Commands:
