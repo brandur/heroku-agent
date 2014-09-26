@@ -8,6 +8,10 @@ import (
 	"os"
 )
 
+const (
+	Version = "0.1.0"
+)
+
 var (
 	logger *log.Logger
 )
@@ -35,5 +39,6 @@ func main() {
 		Run(flag.Arg(0))
 	default:
 		printUsage()
+		os.Exit(1)
 	}
 }

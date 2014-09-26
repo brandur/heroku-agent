@@ -3,46 +3,74 @@ package main
 import (
 	"fmt"
 	"net/rpc"
+	"os"
 	"time"
 )
 
 func Run(command string) {
+	switch {
+	case command == "clear":
+		clear()
+	case command == "help":
+		help()
+	case command == "state":
+		stats()
+	case command == "version":
+		version()
+	default:
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func clear() {
+	client := getClient()
+	err := client.Call("Receiver.Clear", []string{}, &[]string{})
+	if err != nil {
+		fail(err)
+	}
+	fmt.Printf("Cleared all stores\n")
+}
+
+func getClient() *rpc.Client {
 	controlPath := getPath("HEROKU_AGENT_CONTROL_SOCK",
 		"~/.heroku-agent-control.sock")
+
 	client, err := rpc.DialHTTP("unix", controlPath)
 	if err != nil {
 		fail(fmt.Errorf("couldn't connect to server: " + err.Error()))
 	}
 
-	switch {
-	case command == "clear":
-		err = clear(client)
-	case command == "state":
-		err = stats(client)
-	default:
-		printUsage()
-	}
+	logger.Printf("Connecting to: %s\n", controlPath)
 
-	if err != nil {
-		fail(err)
-	}
+	return client
 }
 
-func clear(client *rpc.Client) error {
-	err := client.Call("Receiver.Clear", []string{}, &[]string{})
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Cleared all stores\n")
-	return nil
+func help() {
+	printUsage()
+	fmt.Printf(`
+
+Runs as daemon unless [command] is specified.
+
+Commands:
+
+    clear        Clear daemon's cache and two factor store
+    help         Display help text
+    state        Display daemon's state
+    version      Display version
+`)
 }
 
-func stats(client *rpc.Client) error {
+func stats() {
+	client := getClient()
 	state := &State{}
 	err := client.Call("Receiver.State", []string{}, state)
 	if err != nil {
-		return err
+		fail(err)
 	}
 	fmt.Printf("Up: %v\n", time.Now().Sub(state.UpAt))
-	return nil
+}
+
+func version() {
+	fmt.Printf("%s\n", Version)
 }

@@ -43,7 +43,6 @@ func getPath(key string, value string) string {
 
 func printUsage() {
 	fmt.Printf("Usage: heroku-agent [-v] [command]")
-	os.Exit(1)
 }
 
 // Unfortunately, the Toolbelt sends a user's password via query parameter,
