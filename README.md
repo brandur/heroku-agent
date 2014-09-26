@@ -33,7 +33,7 @@ $ hk apps
 
 ### heroku
 
-**WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. Until then, these instructions are a bit janky.
+**WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. Until then, these instructions are a bit janky (and somewhat fragile).
 
 ``` bash
 $ heroku update
@@ -60,7 +60,7 @@ $ heroku config -a core-db
 ...
 ```
 
-The likely cause is that your Toolbelt has updated itself and overwritten the custom Excon gem. The fix is to follow the instructions again.
+The likely cause is that your Toolbelt has updated itself and overwritten the custom Excon gem. The fix is to follow the installation instructions again.
 
 ## Benchmarks
 
