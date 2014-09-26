@@ -26,6 +26,8 @@ func Serve() {
 	proxyListener := initListener(getProxySocketPath())
 	controlListener := initListener(getControlSocketPath())
 
+	// register and start serving on the control socket so that a heroku-agent
+	// running in "command mode" can connect and make a call
 	rpc.Register(new(RpcReceiver))
 	rpc.HandleHTTP()
 	go http.Serve(controlListener, nil)
