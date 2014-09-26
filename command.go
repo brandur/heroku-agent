@@ -23,12 +23,24 @@ func RunCommand(command string) {
 	}
 }
 
-func clear() {
+func call(method string, args interface{}, reply interface{}) {
 	client := getClient()
-	err := client.Call("RpcReceiver.Clear", []string{}, &[]string{})
+
+	start := time.Now()
+	logger.Printf("[command] Request: RPC: %s [start]\n", method)
+	defer func() {
+		logger.Printf("[command] Response: RPC: %s [finish] [elapsed=%v]\n", method,
+			time.Now().Sub(start))
+	}()
+
+	err := client.Call("RpcReceiver."+method, args, reply)
 	if err != nil {
 		fail(err)
 	}
+}
+
+func clear() {
+	call("Clear", []string{}, &[]string{})
 	fmt.Printf("Cleared all stores\n")
 }
 
@@ -60,12 +72,8 @@ Commands:
 }
 
 func stats() {
-	client := getClient()
 	state := &State{}
-	err := client.Call("RpcReceiver.State", []string{}, state)
-	if err != nil {
-		fail(err)
-	}
+	call("State", []string{}, state)
 	fmt.Printf("Up: %v\n", time.Now().Sub(state.UpAt))
 }
 

@@ -114,11 +114,11 @@ func (r *RpcReceiver) State(_ []string, s *State) error {
 	return nil
 }
 
-func (r *RpcReceiver) logFinish(name string, start time.Time) {
-	logger.Printf("[server] Response: RPC: %s [finish] [elapsed=%v]\n", name,
+func (r *RpcReceiver) logFinish(method string, start time.Time) {
+	logger.Printf("[server] Response: RPC: %s [finish] [elapsed=%v]\n", method,
 		time.Now().Sub(start))
 }
 
-func (r *RpcReceiver) logStart(name string) {
-	logger.Printf("[server] Request: RPC: %s [start]\n", name)
+func (r *RpcReceiver) logStart(method string) {
+	logger.Printf("[server] Request: RPC: %s [start]\n", method)
 }
