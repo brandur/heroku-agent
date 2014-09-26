@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func Run(command string) {
+func RunCommand(command string) {
 	switch {
 	case command == "clear":
 		clear()

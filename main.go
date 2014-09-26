@@ -36,7 +36,7 @@ func main() {
 	case len(flag.Args()) == 0:
 		Serve()
 	case len(flag.Args()) == 1:
-		Run(flag.Arg(0))
+		RunCommand(flag.Arg(0))
 	default:
 		printUsage()
 		os.Exit(1)
