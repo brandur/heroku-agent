@@ -39,6 +39,10 @@ func init() {
 	}
 }
 
+func CacheCount() int {
+	return cache.count()
+}
+
 func CacheHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
 	cached, isCached := cache.getCache(r)
 
@@ -149,6 +153,10 @@ func (c *RequestCache) clear() {
 		delete(c.cacheMap, k)
 	}
 	logger.Printf("[cache] Cleared %v cache key(s)\n", numKeys)
+}
+
+func (c *RequestCache) count() int {
+	return len(c.cacheMap)
 }
 
 func (c *RequestCache) reap() {

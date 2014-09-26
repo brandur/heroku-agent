@@ -15,8 +15,10 @@ var (
 )
 
 type State struct {
-	StopChan chan bool
-	UpAt     time.Time
+	CacheCount     int
+	TwoFactorCount int
+	StopChan       chan bool
+	UpAt           time.Time
 }
 
 func Serve() {
@@ -125,7 +127,10 @@ func (r *RpcReceiver) GetState(_ []string, s *State) error {
 	r.logStart("State")
 	defer r.logFinish("State", start)
 
+	s.CacheCount = CacheCount()
+	s.TwoFactorCount = TwoFactorStoreCount()
 	s.UpAt = state.UpAt
+
 	return nil
 }
 

@@ -83,6 +83,8 @@ func logStart(method string) {
 func stats() {
 	state := &State{}
 	call("GetState", []string{}, state)
+	fmt.Printf("Cache count: %v\n", state.CacheCount)
+	fmt.Printf("Second factor count: %v\n", state.TwoFactorCount)
 	fmt.Printf("Up: %v\n", time.Now().Sub(state.UpAt))
 }
 

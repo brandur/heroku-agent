@@ -59,6 +59,10 @@ func ReapTwoFactorStore() {
 	}
 }
 
+func TwoFactorStoreCount() int {
+	return store.count()
+}
+
 func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.ResponseRecorder, error) {
 	// replace our sent authorization if we're holding a more privileged token
 	// already
@@ -148,6 +152,10 @@ func (s *TwoFactorStore) clear() {
 		delete(s.secondFactorMap, k)
 	}
 	logger.Printf("[2fa] Cleared %v second factor(s)\n", numKeys)
+}
+
+func (s *TwoFactorStore) count() int {
+	return len(s.secondFactorMap)
 }
 
 func (s *TwoFactorStore) reap() {
