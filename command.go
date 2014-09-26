@@ -33,9 +33,7 @@ func clear() {
 }
 
 func getClient() *rpc.Client {
-	controlPath := getPath("HEROKU_AGENT_CONTROL_SOCK",
-		"~/.heroku-agent-control.sock")
-
+	controlPath := getControlSocketPath()
 	client, err := rpc.DialHTTP("unix", controlPath)
 	if err != nil {
 		fail(fmt.Errorf("couldn't connect to server: " + err.Error()))

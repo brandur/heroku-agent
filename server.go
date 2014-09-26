@@ -23,12 +23,8 @@ func Serve() {
 		UpAt: time.Now(),
 	}
 
-	proxyPath := getPath("HEROKU_AGENT_SOCK", "~/.heroku-agent.sock")
-	proxyListener := initListener(proxyPath)
-
-	controlPath := getPath("HEROKU_AGENT_CONTROL_SOCK",
-		"~/.heroku-agent-control.sock")
-	controlListener := initListener(controlPath)
+	proxyListener := initListener(getProxySocketPath())
+	controlListener := initListener(getControlSocketPath())
 
 	rpc.Register(new(RpcReceiver))
 	rpc.HandleHTTP()

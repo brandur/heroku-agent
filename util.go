@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+var (
+	DefaultControlSocketPath = "~/.heroku-agent-control.sock"
+	DefaultProxySocketPath   = "~/.heroku-agent.sock"
+)
+
 //
 // Contains any functions that are called by multiple modules, but don't belong
 // in any in particular.
@@ -39,6 +44,14 @@ func getPath(key string, value string) string {
 	}
 
 	return path
+}
+
+func getControlSocketPath() string {
+	return getPath("HEROKU_AGENT_CONTROL_SOCK", DefaultControlSocketPath)
+}
+
+func getProxySocketPath() string {
+	return getPath("HEROKU_AGENT_SOCK", DefaultProxySocketPath)
 }
 
 func printUsage() {
