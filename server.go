@@ -81,6 +81,19 @@ func initListener(socketPath string) net.Listener {
 	return l
 }
 
+func (r *Receiver) Clear(_ []string, _ *[]string) error {
+	start := time.Now()
+	logger.Printf("[server] Request: RPC: Clear [start]\n")
+	defer func() {
+		logger.Printf("[server] Response: RPC: Clear [finish] [elapsed=%v]\n",
+			time.Now().Sub(start))
+	}()
+
+	ClearCache()
+	ClearTwoFactorStore()
+	return nil
+}
+
 func (r *Receiver) State(_ []string, s *State) error {
 	start := time.Now()
 	logger.Printf("[server] Request: RPC: State [start]\n")

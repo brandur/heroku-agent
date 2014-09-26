@@ -15,6 +15,8 @@ func Run(command string) {
 	}
 
 	switch {
+	case command == "clear":
+		err = clear(client)
 	case command == "state":
 		err = stats(client)
 	default:
@@ -24,6 +26,15 @@ func Run(command string) {
 	if err != nil {
 		fail(err)
 	}
+}
+
+func clear(client *rpc.Client) error {
+	err := client.Call("Receiver.Clear", []string{}, &[]string{})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Cleared all stores\n")
+	return nil
 }
 
 func stats(client *rpc.Client) error {

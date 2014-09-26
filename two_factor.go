@@ -46,6 +46,10 @@ func init() {
 	}
 }
 
+func ClearTwoFactorStore() {
+	store.clear()
+}
+
 func ReapTwoFactorStore() {
 	for {
 		select {
@@ -136,6 +140,14 @@ func (s *TwoFactorStore) getSkipTwoFactorToken(r *http.Request) (*SecondFactor, 
 		token:     responseData.AccessToken.Token,
 	}
 	return secondFactor, nil
+}
+
+func (s *TwoFactorStore) clear() {
+	numKeys := len(s.secondFactorMap)
+	for k := range s.secondFactorMap {
+		delete(s.secondFactorMap, k)
+	}
+	logger.Printf("[2fa] Cleared %v second factor(s)\n", numKeys)
 }
 
 func (s *TwoFactorStore) reap() {
