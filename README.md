@@ -47,6 +47,21 @@ $ heroku apps
 $ tail ~/.heroku-agent.log
 ```
 
+If you have been using heroku-agent successfully, but receive an error that looks like this:
+
+```
+$ heroku config -a core-db
+
+ !    Heroku client internal error.
+ !    Search for help at: https://help.heroku.com
+ !    Or report a bug at: https://github.com/heroku/heroku/issues/new
+
+    Error:       Proxy is invalid (Excon::Errors::ProxyParseError)
+...
+```
+
+The likely cause is that your Toolbelt has updated itself and overwritten the custom Excon gem. The fix is to follow the instructions again.
+
 ## Benchmarks
 
 ### hk
