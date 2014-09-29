@@ -47,7 +47,7 @@ func getClient() *rpc.Client {
 	controlPath := getControlSocketPath()
 	client, err := rpc.DialHTTP("unix", controlPath)
 	if err != nil {
-		fail(fmt.Errorf("couldn't connect to server: " + err.Error()))
+		fail(fmt.Errorf("couldn't connect to daemon: " + err.Error()))
 	}
 
 	logger.Printf("Connecting to: %s\n", controlPath)
