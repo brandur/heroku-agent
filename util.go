@@ -27,9 +27,9 @@ func copyHeaders(source http.Header, destination http.Header) {
 	}
 }
 
-func fail(err error) {
+func fail(status int, err error) {
 	fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-	os.Exit(1)
+	os.Exit(status)
 }
 
 func getPath(key string, value string) string {
@@ -40,7 +40,7 @@ func getPath(key string, value string) string {
 
 	path, err := homedir.Expand(path)
 	if err != nil {
-		fail(err)
+		fail(1, err)
 	}
 
 	return path

@@ -61,7 +61,7 @@ func Serve() {
 	server := &http.Server{}
 	err := server.Serve(proxyListener)
 	if err != nil {
-		fail(err)
+		fail(1, err)
 	}
 }
 
@@ -104,14 +104,14 @@ func initListener(socketPath string) net.Listener {
 			logger.Printf("heroku-agent already running at %s\n", socketPath)
 			os.Exit(0)
 		}
-		fail(err)
+		fail(1, err)
 	}
 
 	// Make sure that only the current user can gain access to this socket as
 	// it will hold secrets.
 	err = os.Chmod(socketPath, 0600)
 	if err != nil {
-		fail(err)
+		fail(1, err)
 	}
 
 	logger.Printf("[server] Listening on: %s\n", socketPath)

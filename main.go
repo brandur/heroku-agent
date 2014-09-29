@@ -39,6 +39,6 @@ func main() {
 		RunCommand(flag.Arg(0))
 	default:
 		printUsage()
-		os.Exit(1)
+		os.Exit(2)
 	}
 }

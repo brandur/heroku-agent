@@ -21,7 +21,7 @@ func RunCommand(command string) {
 		version()
 	default:
 		printUsage()
-		os.Exit(1)
+		os.Exit(2)
 	}
 }
 
@@ -34,7 +34,7 @@ func call(method string, args interface{}, reply interface{}) {
 
 	err := client.Call("RpcReceiver."+method, args, reply)
 	if err != nil {
-		fail(err)
+		fail(1, err)
 	}
 }
 
@@ -47,7 +47,7 @@ func getClient() *rpc.Client {
 	controlPath := getControlSocketPath()
 	client, err := rpc.DialHTTP("unix", controlPath)
 	if err != nil {
-		fail(fmt.Errorf("couldn't connect to daemon: " + err.Error()))
+		fail(1, fmt.Errorf("couldn't connect to daemon: "+err.Error()))
 	}
 
 	logger.Printf("Connecting to: %s\n", controlPath)
