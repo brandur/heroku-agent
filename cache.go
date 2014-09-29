@@ -102,7 +102,7 @@ func ReapCache() {
 }
 
 func (c *RequestCache) buildCacheKey(request *http.Request) string {
-	auth := request.Header.Get("Authorization")
+	auth := normalizeAuth(request.Header.Get("Authorization"))
 	user := request.Header.Get("X-Heroku-Sudo-User")
 	url := request.URL.String()
 
