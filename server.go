@@ -17,14 +17,14 @@ var (
 type State struct {
 	CacheCount     int
 	TwoFactorCount int
-	StopChan       chan bool
+	StopChan       chan int
 	UpAt           time.Time
 }
 
 func Serve() {
 	state = &State{
 		UpAt:     time.Now(),
-		StopChan: make(chan bool),
+		StopChan: make(chan int),
 	}
 
 	proxyListener := initListener(getProxySocketPath())
@@ -65,24 +65,35 @@ func Serve() {
 	}
 }
 
-func handleSignals(StopChan chan bool) {
+func handleSignals(stopChan chan int) {
 	sigc := make(chan os.Signal, 1)
 	// wait for SIGINT, SIGKILL, or SIGTERM
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	sig := <-sigc
 	logger.Printf("Caught signal %s: shutting down\n", sig)
-	StopChan <- true
+
+	// try to stop with an appropriate exit code
+	switch {
+	case sig == os.Interrupt:
+		stopChan <- 128 + 2
+	case sig == os.Kill:
+		stopChan <- 128 + 9
+	case sig == syscall.SIGTERM:
+		stopChan <- 128 + 15
+	default:
+		stopChan <- 1
+	}
 }
 
-func handleStop(StopChan chan bool, listeners ...net.Listener) {
-	<-StopChan
+func handleStop(StopChan chan int, listeners ...net.Listener) {
+	status := <-StopChan
 
 	// stop listening (and unlink the socket if unix type)
 	for _, listener := range listeners {
 		listener.Close()
 	}
-	os.Exit(0)
+	os.Exit(status)
 }
 
 func initListener(socketPath string) net.Listener {
@@ -140,7 +151,7 @@ func (r *RpcReceiver) Stop(_ []string, _ *[]string) error {
 	defer r.logFinish("Stop", start)
 
 	logger.Printf("[rpc] Stopping by instruction of RPC command\n")
-	r.State.StopChan <- true
+	r.State.StopChan <- 0
 	return nil
 }
 
