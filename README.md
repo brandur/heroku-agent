@@ -38,7 +38,7 @@ $ hk apps
 ``` bash
 $ heroku update
 $ rm -r ~/.heroku/client/vendor/gems/excon-0.39.5
-$ git clone https://github.com/brandur/excon -b brandur-unix-proxies ~/.heroku/client/vendor/gems/excon-0.39.5
+$ git clone --depth 1 https://github.com/excon/excon ~/.heroku/client/vendor/gems/excon-0.39.5
 $ heroku plugins:update
 $ heroku plugins:install https://github.com/brandur/heroku-agent-plugin
 $ heroku apps
