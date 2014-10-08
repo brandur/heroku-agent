@@ -33,8 +33,6 @@ $ hk apps
 
 ### heroku
 
-**WARNING:** heroku-agent requires a yet-as-unreleased version of the Heroku CLI to function. Until then, these instructions are a bit janky (and somewhat fragile).
-
 ``` bash
 $ heroku update
 $ heroku plugins:update
