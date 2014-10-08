@@ -84,20 +84,20 @@ sys     2.20s
 
 ### heroku
 
-Similarly, we observe roughly a 2.5x speedup with the Heroku CLI. This improvement might be greater, but the CLI spends a lot of time warming up to execute just a single command.
+Similarly, we observe roughly a 2x speedup with the Heroku CLI. This improvement might be greater, but the CLI spends a lot of time warming up to execute just a single command.
 
 ```
 # WITH heroku-agent
 $ time (for i in `seq 1 100`; do heroku info -a mutelight > /dev/null ; done)
 
-real    111.28s
-user    44.02s
-sys     5.64s
+real    90.32s
+user    42.07s
+sys     5.31s
 
 # WITHOUT heroku-agent
 $ time (for i in `seq 1 100`; do heroku info -a mutelight > /dev/null ; done)
 
-real    277.81s
-user    50.81s
-sys     6.34s
+real    176.66s
+user    52.06s
+sys     6.47s
 ```
