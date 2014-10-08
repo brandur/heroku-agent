@@ -13,6 +13,7 @@ It provides the following features:
 ### Common (do this for both hk and Heroku CLI)
 
 ``` bash
+# note that Go 1.3+ is required
 $ go get -u github.com/brandur/heroku-agent
 
 # in your .bashrc or .zshrc, add this:
