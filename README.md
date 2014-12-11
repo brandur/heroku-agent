@@ -48,6 +48,20 @@ $ tail ~/.heroku-agent.log
 
 A credential helper is bundled which allows Git to use a privileged token procured by heroku-agent (if one is available) to push to paranoid apps over HTTP Git without requiring pre-authentication.
 
+Make sure that heroku-agent is up-to-date:
+
+```
+go get -u github.com/brandur/heroku-agent
+```
+
+Make sure that your version of Git supports credential helpers. You're looking for something that's not ancient (2+):
+
+```
+git --version
+```
+
+Now install the credential helpers:
+
 ```
 curl https://raw.githubusercontent.com/git/git/master/contrib/credential/netrc/git-credential-netrc > ~/bin/git-credential-netrc
 chmod +x ~/bin/git-credential-netrc
