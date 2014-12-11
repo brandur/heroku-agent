@@ -88,6 +88,15 @@ func TwoFactorHandler(r *http.Request, next NextHandlerFunc) (*httptest.Response
 	return next(r)
 }
 
+func UpgradeToken(token string) (string, bool) {
+	secondFactor, ok := store.secondFactorMap[token]
+	if ok {
+		return secondFactor.token, true
+	} else {
+		return "", false
+	}
+}
+
 func hasAuth(auth string) bool {
 	// "Og==" is just a colon ":" encoded in base64 (no user/pass)
 	return auth != "" && !strings.HasSuffix(auth, "Og==")
