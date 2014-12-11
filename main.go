@@ -1,11 +1,12 @@
 package main
 
 import (
-	flag "github.com/ogier/pflag"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+
+	flag "github.com/ogier/pflag"
 )
 
 const (
@@ -35,8 +36,8 @@ func main() {
 	switch {
 	case len(flag.Args()) == 0:
 		Serve()
-	case len(flag.Args()) == 1:
-		RunCommand(flag.Arg(0))
+	case len(flag.Args()) >= 1:
+		RunCommand(flag.Arg(0), flag.Args()[1:])
 	default:
 		printUsage()
 		os.Exit(2)

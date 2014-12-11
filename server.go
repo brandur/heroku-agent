@@ -155,6 +155,19 @@ func (r *RpcReceiver) Stop(_ []string, _ *[]string) error {
 	return nil
 }
 
+func (r *RpcReceiver) UpgradeToken(token string, resp *string) error {
+	start := time.Now()
+	r.logStart("UpgradeToken")
+	defer r.logFinish("UpgradeToken", start)
+
+	upgradedToken, ok := UpgradeToken(token)
+	if ok {
+		*resp = upgradedToken
+	}
+
+	return nil
+}
+
 func (r *RpcReceiver) logFinish(method string, start time.Time) {
 	logger.Printf("[rpc] Response: RPC: %s [finish] [elapsed=%v]\n", method,
 		time.Now().Sub(start))

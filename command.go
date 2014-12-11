@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func RunCommand(command string) {
+func RunCommand(command string, args []string) {
 	switch {
 	case command == "clear":
 		clear()
@@ -17,6 +17,8 @@ func RunCommand(command string) {
 		stats()
 	case command == "stop":
 		stop()
+	case command == "upgrade-token" && len(args) == 1:
+		upgradeToken(args[0])
 	case command == "version":
 		version()
 	default:
@@ -62,11 +64,12 @@ Runs as daemon unless [command] is specified.
 
 Commands:
 
-    clear        Clear daemon's cache and two factor store
-    help         Display help text
-    state        Display daemon's state
-    stop         Stop daemon
-    version      Display version
+    clear          Clear daemon's cache and two factor store
+    help           Display help text
+    state          Display daemon's state
+    stop           Stop daemon
+    upgrade-token  Exchange token for 2FA-privileged token, if one is held
+    version        Display version
 `)
 }
 
@@ -90,6 +93,16 @@ func stats() {
 func stop() {
 	call("Stop", []string{}, &[]string{})
 	fmt.Printf("Stopped\n")
+}
+
+func upgradeToken(token string) {
+	upgradedToken := ""
+	call("UpgradeToken", token, &upgradedToken)
+	if upgradedToken != "" {
+		fmt.Printf("%v\n", upgradedToken)
+	} else {
+		os.Exit(1)
+	}
 }
 
 func version() {
