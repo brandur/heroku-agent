@@ -50,7 +50,7 @@ A credential helper is bundled which allows Git to use a privileged token procur
 
 ```
 curl https://raw.githubusercontent.com/git/git/master/contrib/credential/netrc/git-credential-netrc > ~/bin/git-credential-netrc
-curl https://raw.githubusercontent.com/brandur/heroku-agent/master/extras/git-credential-heroku-agent > ~/bin/git-credential-heroku-agent
+curl https://raw.githubusercontent.com/brandur/heroku-agent/master/contrib/git-credential-heroku-agent > ~/bin/git-credential-heroku-agent
 ```
 
 Then add the helper to your `~/.gitconfig`:
