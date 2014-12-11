@@ -66,8 +66,12 @@ Then add the helper to your `~/.gitconfig`:
 Now you have heroku-agent procure a privileged token and deploy to paranoid apps normally:
 
 ```
+# if necessary, convert your remote from Git to HTTP
+heroku git:remote --http -r heroku
+
 # authorizing is only necessary if heroku-agent isn't already holding a token
 hk authorize
+
 git push heroku master
 ```
 
